@@ -1,0 +1,4 @@
+sim
+.vscode/*
+obj/*
+bin/*
