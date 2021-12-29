@@ -1,6 +1,6 @@
 #include "particle.h"
 #include <vector>
-#include <chrono>
+#include "sim_time.h"
 
 namespace Simulation {
 
@@ -9,10 +9,15 @@ namespace Simulation {
  */
 class SimulationContext {
 public:
-  SimulationContext() {}
+  SimulationContext()
+                   : m_particles()
+                   , m_sim_clock()
+                   , start(chrono::time_point_cast<US_T>(m_sim_clock.now()))
+                   , m_tock(start)
+                   {}
 
   // get the time of the simulation
-  std::chrono::microseconds get_simulation_time() const;
+  chrono::time_point<chrono::steady_clock> get_simulation_time() const;
 
   // add a particle into the simulation
   // makes a copy of the particle
@@ -21,15 +26,17 @@ public:
   // add a particle into the simulation by passing a velocity and position vector
   void add_particle(const Vector<float>&, const Vector<float>&);
 
-  // run the for x steps
-  void run(size_t steps = 1);
+  // run the simulation, please call repeatedly in a dedicated thread
+  void run();
 
   // read-only view of particles
   const std::vector<Particle<float>>& get_particles() const {return m_particles;};
 
 private:
   std::vector<Particle<float>> m_particles;
-  std::chrono::microseconds m_sim_time;
+  chrono::steady_clock m_sim_clock;
+  const chrono::time_point<chrono::steady_clock, US_T> start;
+  chrono::time_point<chrono::steady_clock, US_T> m_tock;
   size_t m_step = 0;
 };
 

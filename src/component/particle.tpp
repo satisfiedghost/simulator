@@ -7,10 +7,11 @@
 namespace Simulation {
 
 template<typename T>
-void Particle<T>::step(int64_t steps) {
-  // since our velocity is defined as moving 1 TIME_UNIT_SIZE
-  // per step... this is simple vector addition
-  m_position = m_position + ((m_velocity * TIME_RESOLUTION) * steps);
+void Particle<T>::step(US_T us) {
+  // move the amount we would expect, with our given velocity
+  T time_scalar = chrono::duration_cast<chrono::duration<T>>(us).count();
+
+  m_position = m_position + (m_velocity * time_scalar);
 }
 
 template<typename T>
@@ -27,8 +28,10 @@ bool Particle<T>::collide(Particle<T>& other) {
 // TODO use actual debug logging....
 #ifdef DEBUG
   std::cout << "Collision detected!" << std::endl;
-  std::cout << "This particle: " << std::endl << (*this) << std::endl;
+  std::cout << "This particle: " << std::endl << (*this) << std::endl;;
+  std::cout << "This KER: " << std::pow((*this).m_velocity.magnitude, 2) << std::endl;
   std::cout << "Other particle: " <<  std::endl << other << std::endl;
+  std::cout << "Other KER: " << std::pow(other.m_velocity.magnitude, 2) << std::endl;
 #endif
 
   // Got some work to do.
@@ -56,8 +59,10 @@ bool Particle<T>::collide(Particle<T>& other) {
   std::cout << "Impulse vector: " << impulse_vector << std::endl;
   std::cout << "Dist: " << dist << std::endl;
   std::cout << "Vdiff: " << v_diff << std::endl;
-  std::cout << "Our new velocity: " << m_velocity << std::endl;
-  std::cout << "Their new velocity: " << other.m_velocity << std::endl;
+  std::cout << "This new velocity: " << m_velocity << std::endl;
+  std::cout << "This new KER: " << std::pow((*this).m_velocity.magnitude, 2) << std::endl;
+  std::cout << "Other new velocity: " << other.m_velocity << std::endl;
+  std::cout << "Other new KER: " << std::pow(other.m_velocity.magnitude, 2) << std::endl;
   std::cout << std::endl;
 #endif
   // that's it!

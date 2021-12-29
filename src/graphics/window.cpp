@@ -25,7 +25,7 @@ void Graphics::SimulationWindow(const Simulation::SimulationContext& sim) {
   draw_particles[1].setFillColor(sf::Color(252, 186, 3));
   draw_particles[2].setFillColor(sf::Color(111, 218, 232));
   draw_particles[3].setFillColor(sf::Color(61, 65, 145));
-  draw_particles[4].setFillColor(sf::Color(0, 250, 0));
+  //draw_particles[4].setFillColor(sf::Color(0, 250, 0));
 
   // get the clock now
   sf::Clock clock;
