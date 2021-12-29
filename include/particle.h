@@ -49,6 +49,9 @@ public:
   // returns true if a collision occurred
   bool collide(Particle<T>& other);
 
+  // get a copy of this particle's position vector
+  Vector<T> get_position() const { return m_position; };
+
   template <typename S>
   friend std::ostream& operator<<(std::ostream &os, const Particle<S> &t);
 private:

@@ -16,27 +16,16 @@ void SimulationContext::add_particle(const Vector<float>& v, const Vector<float>
 
 void SimulationContext::run(size_t steps) {
 
-#ifdef DEBUG
-  std::cout << "system before" << std::endl;
-  size_t i = 0;
-  for (auto& p : m_particles) {
-    std::cout << "Particle " << i << std::endl;
-    std::cout << p << std::endl << std::endl;
-    i++;
-  }
-#endif
-
-
   for (size_t i = 0; i < steps; i++) {
     // run particles
     for (auto& p : m_particles) {
       p.step();
     }
+    m_step++;
 
     // now check for collisions
     // we only allow 1 collision per 2 partcles per frame so the
     // one with the lower index will always "collide" first
-
     for (size_t j = 0; j < m_particles.size(); j++) {
       for (size_t k = j + 1; k < m_particles.size(); k++) {
         m_particles[j].collide(m_particles[k]);
@@ -45,12 +34,17 @@ void SimulationContext::run(size_t steps) {
   }
 
 #ifdef DEBUG
-  std::cout << "system after" << std::endl;
-  i = 0;
-  for (auto& p : m_particles) {
-    std::cout << "Particle " << i << std::endl;
-    std::cout << p << std::endl << std::endl;
-    i++;
+  constexpr size_t step_rate_limit = 1e6;
+  static size_t last_frame = 0;
+  if (m_step - last_frame > step_rate_limit) {
+    last_frame = m_step;
+    std::cout << "System After Run" << std::endl;
+    size_t i = 0;
+    for (auto& p : m_particles) {
+      std::cout << "Particle " << i << std::endl;
+      std::cout << p << std::endl << std::endl;
+      i++;
+    }
   }
 #endif
 }

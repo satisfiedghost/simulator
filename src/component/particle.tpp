@@ -10,7 +10,7 @@ template<typename T>
 void Particle<T>::step(int64_t steps) {
   // since our velocity is defined as moving 1 TIME_UNIT_SIZE
   // per step... this is simple vector addition
-  m_position = m_position + ((m_velocity * TIME_RESOLUTION)* steps);
+  m_position = m_position + ((m_velocity * TIME_RESOLUTION) * steps);
 }
 
 template<typename T>

@@ -24,9 +24,13 @@ public:
   // run the for x steps
   void run(size_t steps = 1);
 
+  // read-only view of particles
+  const std::vector<Particle<float>>& get_particles() const {return m_particles;};
+
 private:
   std::vector<Particle<float>> m_particles;
   std::chrono::microseconds m_sim_time;
+  size_t m_step = 0;
 };
 
 } // Simulation
