@@ -3,3 +3,5 @@ sim
 obj/*
 bin/*
 tst/*
+!tst/*.cc
+!tst/CMakeLists.txt
