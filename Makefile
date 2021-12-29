@@ -2,13 +2,13 @@ SRC_DIR := src
 OBJ_DIR := obj
 BIN_DIR := bin
 
-CPPFLAGS := -Iinclude -Isrc/component -MMD -MP
+CPPFLAGS := -Iinclude -Isrc/component -MP -MMD -Wall -O3 -Wextra -Werror
 
 .PHONY: all clean
 
 EXE := $(BIN_DIR)/sim
 
-SRC := $(wildcard $(SRC_DIR)/*.cpp)
+SRC := $(wildcard $(SRC_DIR)/*.cpp) $(wildcard $(SRC_DIR)/*/*.cpp)
 
 $(info Fource source files $(SRC))
 
@@ -24,7 +24,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	$(CXX) $(CPPFLAGS) -c $< -o $@
 
 $(OBJ_DIR):
-	mkdir -p $@
+	mkdir -p $@ $@/simulation
 
 $(BIN_DIR):
 	mkdir -p $@
