@@ -2,3 +2,4 @@ sim
 .vscode/*
 obj/*
 bin/*
+tst/*

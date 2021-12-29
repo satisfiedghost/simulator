@@ -44,7 +44,6 @@ bool Particle<T>::collide(Particle<T>& other) {
   // I am not completely sure why, but we seem to need to use the absolute value of the dot product lest it be negative and
   // flip the direction of our impulse
   auto dot_product_abs = std::abs(impulse_unit ^ v_diff);
-  std::cout << "dot product_abs: " << dot_product_abs << std::endl;
   auto impulse_vector = impulse_unit * (dot_product_abs);
 
   // now that we have our impulse vector accounted for, we can calculate post-collision velocities
@@ -69,6 +68,7 @@ template<typename T>
 std::ostream& operator<<(std::ostream& os, const Particle<T>& p) {
   os << "V : " << p.m_velocity << std::endl;
   os << "P : " << p.m_position;
+  return os;
 }
 
 } // namespace Simulation

@@ -3,8 +3,6 @@
 #include <iostream>
 #include <type_traits>
 
-#define DEBUG
-
 namespace Simulation {
 
 using std::size_t;
@@ -33,6 +31,12 @@ public:
            T xp, T yp, T zp) 
            : m_velocity(xv, yv, zv)
            , m_position(xp, yp, zp)
+           {}
+
+  // Create a particle with vectors
+  Particle(const Vector<T>& v, const Vector<T> &p)
+           : m_velocity(v)
+           , m_position(p)
            {}
 
   // moves the particle a total of 1 "unit"
