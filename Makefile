@@ -8,7 +8,7 @@ LDFLAGS := -lsfml-graphics -lsfml-window -lsfml-system -pthread
 all: CPPFLAGS += -O3
 debug: CPPFLAGS += -DDEBUG -g
 
-.PHONY: all clean
+.PHONY: all clean clena debug
 
 EXE := $(BIN_DIR)/sim
 
@@ -32,7 +32,11 @@ $(OBJ_DIR):
 
 $(BIN_DIR):
 	mkdir -p $@
+
 clean:
 	@$(RM) -rv $(OBJ_DIR)
+
+# I make this typo constantly
+clena: clean
 
 debug: $(EXE)

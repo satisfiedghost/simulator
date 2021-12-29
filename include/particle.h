@@ -2,14 +2,11 @@
 #include "vector.h"
 #include <iostream>
 #include <type_traits>
+#include "sim_time.h"
 
 namespace Simulation {
 
 using std::size_t;
-
-// essentially the resolution for movement, each particle moves this many "units" in time
-// during a step of the simulation
-constexpr float TIME_RESOLUTION = 1e-5;
 
 // Point particle
 template<typename T>
@@ -39,9 +36,9 @@ public:
            , m_position(p)
            {}
 
-  // moves the particle a total of 1 "unit"
+  // moves the particle a total of some time
   // or supply a value to run the simulation forward or backward
-  void step(int64_t steps = 1);
+  void step(US_T us);
 
   // collide 2 particles
   // if their distance is greater than RADIUS, then no effect.
@@ -51,6 +48,9 @@ public:
 
   // get a copy of this particle's position vector
   Vector<T> get_position() const { return m_position; };
+
+  // get a copy of this particle's velocity vector
+  Vector<T> get_velocity() const { return m_velocity; };
 
   template <typename S>
   friend std::ostream& operator<<(std::ostream &os, const Particle<S> &t);

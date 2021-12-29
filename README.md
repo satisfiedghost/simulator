@@ -15,8 +15,10 @@ A simple physics engine. Written from scratch with minimal research to see what 
 * Support ints
   * Requires implementing fixed-width scalars, probably a lot of work
 * 3D graphics
+  * Engine already fully supports 3D particles, but we can only render 2D graphics for now
 * Better name.
 * Performance is lacking.
   * Better timing
   * Maybe run simulation "on demand" and fast forward though parts where no collision is imminent.
   * Needs real time coupling
+* Simulation boundaries
