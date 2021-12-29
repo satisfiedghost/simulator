@@ -2,7 +2,10 @@ SRC_DIR := src
 OBJ_DIR := obj
 BIN_DIR := bin
 
-CPPFLAGS := -Iinclude -Isrc/component -MP -MMD -Wall -O3 -Wextra -Werror
+CPPFLAGS := -Iinclude -Isrc/component -MP -MMD -Wall -Wextra -Werror
+
+all: CPPFLAGS += -O3
+debug: CPPFLAGS += -DDEBUG -g
 
 .PHONY: all clean
 
@@ -31,3 +34,4 @@ $(BIN_DIR):
 clean:
 	@$(RM) -rv $(OBJ_DIR)
 
+debug: $(EXE)

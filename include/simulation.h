@@ -2,8 +2,6 @@
 #include <vector>
 #include <chrono>
 
-#define DEBUG
-
 namespace Simulation {
 
 /**
