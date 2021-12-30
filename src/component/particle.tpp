@@ -70,6 +70,11 @@ bool Particle<T>::collide(Particle<T>& other) {
 }
 
 template<typename T>
+void Particle<T>::bounce (const Vector<T>& inverse) {
+  m_velocity = m_velocity * inverse;
+}
+
+template<typename T>
 std::ostream& operator<<(std::ostream& os, const Particle<T>& p) {
   os << "V : " << p.m_velocity << std::endl;
   os << "P : " << p.m_position;

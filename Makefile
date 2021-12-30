@@ -34,7 +34,7 @@ $(BIN_DIR):
 	mkdir -p $@
 
 clean:
-	@$(RM) -rv $(OBJ_DIR)
+	@$(RM) -rv $(OBJ_DIR) $(BIN_DIR)
 
 # I make this typo constantly
 clena: clean

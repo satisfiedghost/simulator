@@ -7,6 +7,8 @@ template<typename T>
 struct Vector {
   static_assert(!std::is_integral<T>::value, "Integral types are not yet supported.");
 
+  Vector() {};
+
   Vector(T x, T y, T z);
 
   // get a unit vector
@@ -60,6 +62,14 @@ Vector<T> operator%(const Vector<T>&, const Vector<T>&);
 // scalar multiplaction with other types
 template<typename T, typename S>
 Vector<T> operator*(const Vector<T>&, const S);
+
+// multiply two vectors
+template<typename T>
+Vector<T> operator*(const Vector<T>&, const Vector<T>&);
+
+// equality
+template<typename T>
+bool operator==(const Vector<T>&, const Vector<T>&);
 
 } // namespace Simulation
 

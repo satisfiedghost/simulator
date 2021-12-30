@@ -1,4 +1,6 @@
 #include "simulation.h"
+#include<limits>
+
 
 using namespace Simulation;
 
@@ -38,6 +40,25 @@ void SimulationContext::run() {
     }
   }
 
+  // check if anyone has hit a wall
+  for (auto& p : m_particles) {
+    for (const auto& w : m_boundaries) {
+      // can't bounce off a wall if you're not traveling toward it....
+      auto rel_vel = (p.get_velocity() * w.normal.abs());
+
+      if (rel_vel * w.normal == rel_vel) {
+        continue;
+      }
+
+      // convert to a 1D position
+      auto rel_pos = (p.get_position() * w.normal.abs()).magnitude;
+      if (std::abs(rel_pos - w.position) <= Particle<float>::RADIUS) {
+        p.bounce(w.inverse);
+        break;
+      }
+    }
+  }
+
 #ifdef DEBUG
   // print every second
   float total_energy = 0;
@@ -56,3 +77,41 @@ void SimulationContext::run() {
   }
 #endif
 }
+
+// stand up for yourself
+void SimulationContext::set_boundaries(float x, float y, float z) {
+  auto x_half = x / 2;
+  auto y_half = y / 2;
+  auto z_half = z / 2;
+
+  m_boundaries[WallIdx::LEFT].position = -x_half;
+  m_boundaries[WallIdx::LEFT].normal = Vector<float>(1, 0, 0);
+  m_boundaries[WallIdx::LEFT].inverse = Vector<float>(-1, 1, 1);
+
+  m_boundaries[WallIdx::RIGHT].position = x_half;
+  m_boundaries[WallIdx::RIGHT].normal = Vector<float>(-1, 0, 0);
+  m_boundaries[WallIdx::RIGHT].inverse = Vector<float>(-1, 1, 1);
+
+  m_boundaries[WallIdx::BOTTOM].position = -y_half;
+  m_boundaries[WallIdx::BOTTOM].normal = Vector<float>(0, 1, 0);
+  m_boundaries[WallIdx::BOTTOM].inverse = Vector<float>(1, -1, 1);
+
+  m_boundaries[WallIdx::TOP].position = y_half;
+  m_boundaries[WallIdx::TOP].normal = Vector<float>(0, -1, 0);
+  m_boundaries[WallIdx::TOP].inverse = Vector<float>(1, -1, 1);
+
+  m_boundaries[WallIdx::BACK].position = -z_half;
+  m_boundaries[WallIdx::BACK].normal = Vector<float>(0, 0, 1);
+  m_boundaries[WallIdx::BACK].inverse = Vector<float>(1, 1, -1);
+
+  m_boundaries[WallIdx::FRONT].position = z_half;
+  m_boundaries[WallIdx::FRONT].normal = Vector<float>(0, 0, -1);
+  m_boundaries[WallIdx::FRONT].inverse = Vector<float>(1, 1, -1);
+}
+
+// by default, there are walls stored as far left as possible
+SimulationContext::Wall::Wall()
+  : position(std::numeric_limits<float>::min())
+  , normal()
+  , inverse()
+  {}
