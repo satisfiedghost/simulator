@@ -1,5 +1,7 @@
 #include "window.h"
 #include <thread>
+#include <time.h>
+#include <cmath>
 
 
 void sim_runner(Simulation::SimulationContext& sim) {
@@ -12,23 +14,35 @@ void sim_runner(Simulation::SimulationContext& sim) {
 int main() {
   Simulation::SimulationContext sim;
 
-  Simulation::Vector<float> v1(0, 0, 0);
-  Simulation::Vector<float> p1(0, 0, 0);
+  constexpr size_t x_width = 1600;
+  constexpr size_t y_width = 800;
+  constexpr size_t z_width = 1000;
+  sim.set_boundaries(x_width, y_width, z_width);
 
-  Simulation::Vector<float> v2(0, 0, 0);
-  Simulation::Vector<float> p2(0, 0, 0);
+  srand(time(NULL));
 
-  Simulation::Vector<float> v3(0, 0, 0);
-  Simulation::Vector<float> p3(0, 0, 0);
+  constexpr size_t number_particles = 144;
+  constexpr size_t grid = std::floor(std::sqrt(number_particles));
 
-  Simulation::Vector<float> v4(0, 0, 0);
-  Simulation::Vector<float> p4(0, 0, 0);
+  size_t x_spacing = (x_width - 100) / grid;
+  size_t y_spacing = (y_width - 100) / grid;
+  
+  // 100 particles with random initial velocities
 
+  constexpr int vmax = 500;
 
-  sim.add_particle(v1, p1);
-  sim.add_particle(v2, p2);
-  sim.add_particle(v3, p3);
-  sim.add_particle(v4, p4);
+  for (size_t i = 0; i < number_particles; i++) {
+    auto vx = rand() % vmax - (vmax / 2);
+    auto vy = rand() % vmax - (vmax / 2);
+
+    int px = (-(x_width / 2) + 100) + (i % grid) * x_spacing;
+    int py = (y_width / 2) - 100 - (i / grid) * y_spacing;
+   
+    Simulation::Vector<float> v{static_cast<float>(vx), static_cast<float>(vy), 0.f};
+    Simulation::Vector<float> p{static_cast<float>(px), static_cast<float>(py), 0.f};
+
+    sim.add_particle(v, p);
+  }
 
   std::thread window(Graphics::SimulationWindow, std::ref(sim));
   std::thread sim_thread(sim_runner, std::ref(sim));

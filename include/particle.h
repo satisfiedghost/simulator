@@ -14,10 +14,11 @@ class Particle {
 
 static_assert(!std::is_integral<T>::value, "Integral types are not yet supported.");
 
+public:
+
 // radius of a unit. If the distance between 2 particles is lessr than this after a time step, they have collided
 static constexpr size_t RADIUS = 10;
 
-public:
   // Defaults everything to 0
   Particle() : m_velocity(0, 0, 0)
              , m_position(0, 0, 0)
@@ -45,6 +46,9 @@ public:
   // otherwise, they collide
   // returns true if a collision occurred
   bool collide(Particle<T>& other);
+
+  // bounce off a normal vector e.g. the edge of the simulation
+  void bounce(const Vector<T> &normal);
 
   // get a copy of this particle's position vector
   Vector<T> get_position() const { return m_position; };

@@ -105,5 +105,19 @@ Vector<T> operator*(const Vector<T>& v, const S s) {
                    v.m_z * s);
 }
 
+// multiply two vectors
+template<typename T>
+Vector<T> operator*(const Vector<T>& first, const Vector<T>& second) {
+  return Vector<T>(first.one() * second.one(),
+                   first.two() * second.two(),
+                   first.three() * second.three());
+}
+
+template<typename T>
+bool operator==(const Vector<T>& first, const Vector<T>& second) {
+  return first.one() == second.one() and
+         first.two() == second.two() and
+         first.three() == second.three();
+}
 
 } // namespace Simulation

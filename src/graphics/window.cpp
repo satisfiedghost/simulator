@@ -1,6 +1,7 @@
 #include "window.h"
 #include <SFML/Graphics.hpp>
 #include <vector>
+#include <time.h>
 
 void Graphics::SimulationWindow(const Simulation::SimulationContext& sim) {
   (void)sim;
@@ -10,22 +11,24 @@ void Graphics::SimulationWindow(const Simulation::SimulationContext& sim) {
   std::vector<sf::CircleShape> draw_particles;
 
   const auto& sim_particles = sim.get_particles();
+  constexpr float RADIUS = 10.f;
+
+  constexpr float X_OFFSET = 800 - RADIUS;
+  constexpr float Y_OFFSET = 450 - RADIUS;
 
   for (const auto& p : sim_particles) {
     (void)p;
-    sf::CircleShape tshape(10.f);
+    sf::CircleShape tshape(RADIUS);
     draw_particles.push_back(tshape);
   }
 
-  for (auto& p : draw_particles) {
-    p.setOrigin(-800, -450);
+  srand (time(NULL));
+  for (auto & p : draw_particles) {
+    auto r = rand() % 256;
+    auto g = rand() % 256;
+    auto b = rand() % 256;
+    p.setFillColor(sf::Color(r, g, b));
   }
-
-  draw_particles[0].setFillColor(sf::Color(150, 50, 30));
-  draw_particles[1].setFillColor(sf::Color(252, 186, 3));
-  draw_particles[2].setFillColor(sf::Color(111, 218, 232));
-  draw_particles[3].setFillColor(sf::Color(61, 65, 145));
-  //draw_particles[4].setFillColor(sf::Color(0, 250, 0));
 
   // get the clock now
   sf::Clock clock;
@@ -53,7 +56,7 @@ void Graphics::SimulationWindow(const Simulation::SimulationContext& sim) {
         size_t idx = 0;
         for (const auto& p : sim_particles) {
           auto pos = p.get_position();
-          draw_particles[idx].setPosition(pos.one(), pos.two());
+          draw_particles[idx].setPosition(pos.one() + X_OFFSET, -pos.two() + Y_OFFSET - 50);
           window.draw(draw_particles[idx]);
           idx++;
         }
