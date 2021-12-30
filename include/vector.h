@@ -11,6 +11,9 @@ struct Vector {
 
   Vector(T x, T y, T z);
 
+  // copy ctor
+  inline Vector(const Vector<T>& other);
+
   // get a unit vector
   Vector unit_vector() const;
 

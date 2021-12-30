@@ -13,10 +13,19 @@ Vector<T>::Vector(T x, T y, T z)
         , m_z(z)
         {
           magnitude = std::sqrt(
-                      std::pow(m_x, 2) + 
+                      std::pow(m_x, 2) +
                       std::pow(m_y, 2) +
                       std::pow(m_z, 2));
         }
+
+template<typename T>
+Vector<T>::Vector(const Vector<T>& other)
+         : m_x(other.m_x)
+         , m_y(other.m_y)
+         , m_z(other.m_z)
+         , magnitude(other.magnitude)
+         {}
+
 
 template<typename T>
 Vector<T> Vector<T>::unit_vector() const {
@@ -47,15 +56,15 @@ Vector<T> operator*(const Vector<T>& v, const T s) {
 template<typename T>
 Vector<T> operator*(const T s, const Vector<T>& v) {
   return Vector<T>(v.m_x * s,
-                v.m_y * s,
-                v.m_z * s);
+                   v.m_y * s,
+                   v.m_z * s);
 }
 
 template<typename T>
 Vector<T> operator/(const Vector<T>& v, const T s) {
   return Vector<T>(v.m_x / s,
-                v.m_y / s,
-                v.m_z / s);
+                   v.m_y / s,
+                   v.m_z / s);
 }
 
 // also should probably make these available as members
@@ -76,7 +85,7 @@ Vector<T> operator-(const Vector<T>& first, const Vector<T>& second) {
 // dot product
 template<typename T>
 T operator^(const Vector<T>& first, const Vector<T>& second) {
-  return first.m_x * second.m_x + 
+  return first.m_x * second.m_x +
          first.m_y * second.m_y +
          first.m_z * second.m_z;
 }

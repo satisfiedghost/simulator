@@ -8,11 +8,10 @@ constexpr size_t y_width = 800;
 constexpr size_t z_width = 1000;
 
 void sim_runner(Simulation::SimulationContext& sim) {
-  while (true) {
+  while(true) {
     sim.run();
   }
 }
-
 
 int main() {
   Simulation::SimulationContext sim;
@@ -21,8 +20,8 @@ int main() {
 
   srand(time(NULL));
 
-  constexpr size_t number_particles = 400;
-  constexpr size_t grid = std::floor(std::sqrt(number_particles));
+  constexpr size_t number_particles = 200;
+  const size_t grid = std::floor(std::sqrt(number_particles));
 
   size_t x_spacing = (x_width - 100) / grid;
   size_t y_spacing = (y_width - 100) / grid;

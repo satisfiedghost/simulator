@@ -4,7 +4,6 @@
 #include <time.h>
 
 void Graphics::SimulationWindow(const Simulation::SimulationContext& sim) {
-  (void)sim;
   // create the window
   sf::RenderWindow window(sf::VideoMode(1600, 900), "My window");
 
@@ -16,8 +15,7 @@ void Graphics::SimulationWindow(const Simulation::SimulationContext& sim) {
   constexpr float X_OFFSET = 800 - RADIUS;
   constexpr float Y_OFFSET = 450 - RADIUS;
 
-  for (const auto& p : sim_particles) {
-    (void)p;
+  for (size_t i = 0; i < sim_particles.size(); i++) {
     sf::CircleShape tshape(RADIUS);
     draw_particles.push_back(tshape);
   }
@@ -38,6 +36,7 @@ void Graphics::SimulationWindow(const Simulation::SimulationContext& sim) {
   // run the program as long as the window is open
   while (window.isOpen())
   {
+      const auto& sim_particles = sim.get_particles();
       sf::Time now = clock.getElapsedTime();
       // check all the window's events that were triggered since the last iteration of the loop
       sf::Event event;

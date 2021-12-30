@@ -21,9 +21,20 @@ add_executable(
 )
 
 add_executable(
+  test_particle
+  test_particle.cc
+)
+
+add_executable(
   test_sim
   test_sim.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/../obj/simulation/simulation.o
+)
+
+target_include_directories(
+  test_particle PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/component>
 )
 
 target_include_directories(
@@ -44,6 +55,11 @@ target_link_directories(
 )
 
 target_link_libraries(
+  test_particle
+  gtest_main
+)
+
+target_link_libraries(
   test_vector
   gtest_main
 )
@@ -54,5 +70,5 @@ target_link_libraries(
 )
 
 include(GoogleTest)
-gtest_discover_tests(test_vector test_sim)
+gtest_discover_tests(test_vector test_sim)# test_particle)
 
