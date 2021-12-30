@@ -4,6 +4,7 @@ A simple physics engine. Written from scratch with minimal research to see what 
 
 # Todo / Improvements / Bugs
 
+* More compiler warnings. God.
 * Simulator is very upset when to spheres are inside each other.
   * Could solve by moving them at least R * 2 apart in distance of their normal vector.
 * ~~Particles stop moving at some point. Seems to be a floating point issue with the velocity.~~

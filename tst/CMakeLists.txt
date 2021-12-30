@@ -16,21 +16,43 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_executable(
-  vector
-  vector.cc
+  test_vector
+  test_vector.cc
+)
+
+add_executable(
+  test_sim
+  test_sim.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/simulation/simulation.o
 )
 
 target_include_directories(
-  vector PUBLIC
+  test_vector PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/component>
 )
 
+target_include_directories(
+  test_sim PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/component>
+)
+
+target_link_directories(
+  test_sim PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../obj/simulation/simulation.o>
+)
+
 target_link_libraries(
-  vector
+  test_vector
+  gtest_main
+)
+
+target_link_libraries(
+  test_sim
   gtest_main
 )
 
 include(GoogleTest)
-gtest_discover_tests(vector)
+gtest_discover_tests(test_vector test_sim)
 

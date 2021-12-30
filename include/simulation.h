@@ -15,6 +15,7 @@ public:
                    , m_sim_clock()
                    , start(chrono::time_point_cast<US_T>(m_sim_clock.now()))
                    , m_tock(start)
+                   , m_free_run(false)
                    {}
 
   // get the time of the simulation
@@ -36,11 +37,16 @@ public:
   // create a simulation box, centered about the origin, with dimensions {x, y, z}
   void set_boundaries(float, float, float);
 
+  // If true, run let the system free run
+  // If false, run in steps of the time resolution
+  void set_free_run(bool);
+
 private:
   std::vector<Particle<float>> m_particles;
   chrono::steady_clock m_sim_clock;
   const chrono::time_point<chrono::steady_clock, US_T> start;
   chrono::time_point<chrono::steady_clock, US_T> m_tock;
+  bool m_free_run;
 
   // simulation boundaries
   struct Wall {
