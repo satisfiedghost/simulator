@@ -1,5 +1,6 @@
 #include "simulation.h"
 #include<limits>
+#include <algorithm>
 
 
 using namespace Simulation;
@@ -9,26 +10,42 @@ chrono::time_point<chrono::steady_clock> SimulationContext::get_simulation_time(
 }
 
 void SimulationContext::add_particle(Particle<float> p) {
-  m_particles.push_back(p);
+  add_particle_internal(p);
 }
 
 void SimulationContext::add_particle(const Vector<float>& v, const Vector<float> & p) {
-  m_particles.push_back(Particle<float>(v, p));
+  add_particle(Particle<float>(v, p));
+}
+
+void SimulationContext::add_particle_internal(Particle<float>& p) {
+  size_t uid = m_working_particles.size() + 1;
+  p.uid.latch(uid);
+  // TODO we don't support adding particles at runtime (properly yet)
+  // you can do it, it just might look weird
+  m_working_particles.push_back(p);
+  m_prepared_particles.push_back(p);
 }
 
 void SimulationContext::run() {
   auto now = m_sim_clock.now();
   auto elapsed = chrono::duration_cast<chrono::microseconds>(now - m_tock);
 
+  if (elapsed > SIM_RESOLUTION_US) {
+    should_calc_next_step = true;
+    // copy the working buffer to the finalized buffer
+    m_prepared_particles = m_working_particles;
+  }
+
   // If we're free running, just plow ahead
-  if (!m_free_run && elapsed < SIM_RESOLUTION_US) {
+  if (!m_free_run && !should_calc_next_step) {
     return;
   }
+  should_calc_next_step = false;
 
   m_tock = chrono::time_point_cast<US_T>(now);
 
   // run particles
-  for (auto& p : m_particles) {
+  for (auto& p : m_working_particles) {
     p.step(SIM_RESOLUTION_US);
   }
   m_step++;
@@ -36,14 +53,22 @@ void SimulationContext::run() {
   // now check for collisions
   // we only allow 1 collision per 2 partcles per frame so the
   // one with the lower index will always "collide" first
-  for (size_t j = 0; j < m_particles.size(); j++) {
-    for (size_t k = j + 1; k < m_particles.size(); k++) {
-      m_particles[j].collide(m_particles[k]);
+  for (size_t j = 0; j < m_working_particles.size(); j++) {
+    for (size_t k = j + 1; k < m_working_particles.size(); k++) {
+      Status s = m_working_particles[j].collide(m_working_particles[k]);
+      switch(s) {
+        case Status::None:
+        case Status::Success:
+        break;
+        case Status::Impossible:
+          m_impossible_count++;
+        break;
+      }
     }
   }
 
   // check if anyone has hit a wall
-  for (auto& p : m_particles) {
+  for (auto& p : m_working_particles) {
     for (const auto& w : m_boundaries) {
       // can't bounce off a wall if you're not traveling toward it....
       auto rel_vel = (p.get_velocity() * w.normal.abs());
@@ -69,7 +94,7 @@ void SimulationContext::run() {
     last_frame = m_step;
     std::cout << "System After Run" << std::endl;
     size_t i = 0;
-    for (auto& p : m_particles) {
+    for (auto& p : m_working_particles) {
       std::cout << "Particle " << i << std::endl;
       std::cout << p << std::endl << std::endl;
       total_energy += std::pow(p.get_velocity().magnitude, 2);

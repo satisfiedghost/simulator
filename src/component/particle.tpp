@@ -15,23 +15,35 @@ void Particle<T>::step(US_T us) {
 }
 
 template<typename T>
-bool Particle<T>::collide(Particle<T>& other) {
+Status Particle<T>::collide(Particle<T>& other) {
   // are these particles even close enough for this?
   // define a vector from the other object's COM to ours
   auto dist = m_position - other.m_position;
 
   // nope too far away
   if (dist.magnitude > RADIUS * 2) {
-    return false;
+    return Status::None;
   }
+
+  auto ker = [](T v) {
+    return std::pow(v, 2);
+  };
+  auto our_ker_before = ker(m_velocity.magnitude);
+  auto their_ker_before = ker(other.m_velocity.magnitude);
+  auto our_vel_before = m_velocity;
+  auto their_vel_before = other.m_velocity;
 
 // TODO use actual debug logging....
 #ifdef DEBUG
+  auto this_ker = std::pow((*this).m_velocity.magnitude, 2);
+  auto other_ker = std::pow(other.m_velocity.magnitude, 2);
+  auto total_pre_ker = this_ker + other_ker;
   std::cout << "Collision detected!" << std::endl;
   std::cout << "This particle: " << std::endl << (*this) << std::endl;;
-  std::cout << "This KER: " << std::pow((*this).m_velocity.magnitude, 2) << std::endl;
+  std::cout << "This KER: " << this_ker << std::endl;
   std::cout << "Other particle: " <<  std::endl << other << std::endl;
-  std::cout << "Other KER: " << std::pow(other.m_velocity.magnitude, 2) << std::endl;
+  std::cout << "Other KER: " << other_ker << std::endl;
+  std::cout << "Total KER: " << total_pre_ker << std::endl;
 #endif
 
   // Got some work to do.
@@ -54,19 +66,36 @@ bool Particle<T>::collide(Particle<T>& other) {
   m_velocity = m_velocity + impulse_vector;
   other.m_velocity = other.m_velocity - impulse_vector;
 
+  // If a particular particle is moving too fast or lines up just right...
+  // It can go through another particle before their collisions are detected.
+  // This should be mitigated eventually, but for now detect it and bail out, restoring original velocities.
+  // This results in a large gain in kinetic energy (is there a better way to detect this?)
+  auto our_ker_after = ker(m_velocity.magnitude);
+  auto their_ker_after = ker(other.m_velocity.magnitude);
+  if (std::abs((our_ker_before + their_ker_before) - (our_ker_after + their_ker_after)) > 1) {
+    // nope
+    m_velocity = our_vel_before;
+    other.m_velocity = their_vel_before;
+    return Status::Impossible;
+  }
+
 #ifdef DEBUG
+  this_ker = std::pow((*this).m_velocity.magnitude, 2);
+  other_ker = std::pow(other.m_velocity.magnitude, 2);
   std::cout << "Impulse unit vector: " << impulse_unit << std::endl;
   std::cout << "Impulse vector: " << impulse_vector << std::endl;
   std::cout << "Dist: " << dist << std::endl;
   std::cout << "Vdiff: " << v_diff << std::endl;
-  std::cout << "This new velocity: " << m_velocity << std::endl;
-  std::cout << "This new KER: " << std::pow((*this).m_velocity.magnitude, 2) << std::endl;
-  std::cout << "Other new velocity: " << other.m_velocity << std::endl;
-  std::cout << "Other new KER: " << std::pow(other.m_velocity.magnitude, 2) << std::endl;
+  std::cout << "This particle now: " << (*this) << std::endl;
+  std::cout << "This new KER: " << this_ker << std::endl;
+  std::cout << "Other particle now: " << other << std::endl;
+  std::cout << "Other new KER: " << other_ker << std::endl;
+  std::cout << "Total new KER: " << this_ker + other_ker << std::endl;
+  std::cout << "Diff KER: " << (this_ker + other_ker) - total_pre_ker << std::endl;
   std::cout << std::endl;
 #endif
   // that's it!
-  return true;
+  return Status::Success;
 }
 
 template<typename T>
@@ -76,6 +105,7 @@ void Particle<T>::bounce (const Vector<T>& inverse) {
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const Particle<T>& p) {
+  os << "UID: " << p.uid.get() << std::endl;
   os << "V : " << p.m_velocity << std::endl;
   os << "P : " << p.m_position;
   return os;

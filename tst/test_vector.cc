@@ -15,7 +15,7 @@ TEST_P(CombinationsTest, Magnitude) {
   ASSERT_FLOAT_EQ(test1.magnitude, std::sqrt(3));
 }
 
-INSTANTIATE_TEST_CASE_P(AllCombinations,
+INSTANTIATE_TEST_SUITE_P(AllCombinations,
                         CombinationsTest,
                         ::testing::Combine(::testing::ValuesIn(ones),
                                            ::testing::ValuesIn(ones),

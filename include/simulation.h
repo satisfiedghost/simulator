@@ -2,6 +2,7 @@
 #include <vector>
 #include "sim_time.h"
 #include <array>
+#include <tuple>
 
 namespace Simulation {
 
@@ -11,11 +12,13 @@ namespace Simulation {
 class SimulationContext {
 public:
   SimulationContext()
-                   : m_particles()
+                   : m_working_particles()
+                   , m_prepared_particles()
                    , m_sim_clock()
                    , start(chrono::time_point_cast<US_T>(m_sim_clock.now()))
                    , m_tock(start)
                    , m_free_run(false)
+                   , should_calc_next_step(true)
                    {}
 
   // get the time of the simulation
@@ -32,7 +35,7 @@ public:
   void run();
 
   // read-only view of particles
-  const std::vector<Particle<float>>& get_particles() const {return m_particles;};
+  const std::vector<Particle<float>>& get_particles() const {return m_prepared_particles;};
 
   // create a simulation box, centered about the origin, with dimensions {x, y, z}
   void set_boundaries(float, float, float);
@@ -42,7 +45,15 @@ public:
   void set_free_run(bool);
 
 private:
-  std::vector<Particle<float>> m_particles;
+  void add_particle_internal(Particle<float>&);
+
+  // the working particles are those actively being used to calculate the next state, and
+  // have no guaratneed state
+  std::vector<Particle<float>> m_working_particles;
+
+  // this is the copy clients recerive, which is always guaranteed to be in a valid state
+  std::vector<Particle<float>> m_prepared_particles;
+
   chrono::steady_clock m_sim_clock;
   const chrono::time_point<chrono::steady_clock, US_T> start;
   chrono::time_point<chrono::steady_clock, US_T> m_tock;
@@ -74,6 +85,12 @@ private:
 
   // Number of steps the simulator has run
   size_t m_step = 0;
+
+  // Number of times the simulator has detectd an impossible situation
+  size_t m_impossible_count = 0;
+
+  // Whether we should calculate the next step in the simulation
+  bool should_calc_next_step;
 };
 
 } // Simulation

@@ -4,6 +4,9 @@ A simple physics engine. Written from scratch with minimal research to see what 
 
 # Todo / Improvements / Bugs
 
+* Double buffer the simulation. 
+  * Instead of idling until we're ready for the next frame, pre-calculate it before that frame and simply
+    update then. This could be doable by 2xing the particles and swapping the reference for the current one.
 * More compiler warnings. God.
 * Simulator is very upset when to spheres are inside each other.
   * Could solve by moving them at least R * 2 apart in distance of their normal vector.

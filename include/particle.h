@@ -3,6 +3,8 @@
 #include <iostream>
 #include <type_traits>
 #include "sim_time.h"
+#include "latch.h"
+#include "status.h"
 
 namespace Simulation {
 
@@ -26,7 +28,7 @@ static constexpr size_t RADIUS = 10;
 
   // or supply some numbers of your own
   Particle(T xv, T yv, T zv,
-           T xp, T yp, T zp) 
+           T xp, T yp, T zp)
            : m_velocity(xv, yv, zv)
            , m_position(xp, yp, zp)
            {}
@@ -45,16 +47,27 @@ static constexpr size_t RADIUS = 10;
   // if their distance is greater than RADIUS, then no effect.
   // otherwise, they collide
   // returns true if a collision occurred
-  bool collide(Particle<T>& other);
+  // O3 optimized because this is a hyper critical loop, and doing so results in
+  // inlining all the vector operations, yielding a 5-10x performance increase overall
+
+#if defined(__clang__)
+#elif defined(__GNUC__)
+  __attribute__((optimize(3)))
+#endif
+  Status collide(Particle<T>& other);
 
   // bounce off a normal vector e.g. the edge of the simulation
   void bounce(const Vector<T> &normal);
 
   // get a copy of this particle's position vector
-  Vector<T> get_position() const { return m_position; };
+  const Vector<T> get_position() const { return m_position; };
 
   // get a copy of this particle's velocity vector
-  Vector<T> get_velocity() const { return m_velocity; };
+  const Vector<T> get_velocity() const { return m_velocity; };
+
+  // UID for this particle
+  // 0 is an invalid UID
+  LatchingValue<size_t> uid;
 
   template <typename S>
   friend std::ostream& operator<<(std::ostream &os, const Particle<S> &t);
