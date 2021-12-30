@@ -1,20 +1,30 @@
-#include "window.h"
+#include <gtest/gtest.h>
 #include <thread>
-#include <time.h>
-#include <cmath>
+#include <chrono>
+#include <iostream>
+#include "simulation.h"
+
+class SimulationTest :
+  public ::testing::Test {};
+
+// A baseline performance test to alert us if we've regressed there.
+// Essentially taking the demo program and baselining how long it takes on my netbook...
 
 constexpr size_t x_width = 1600;
 constexpr size_t y_width = 800;
 constexpr size_t z_width = 1000;
+constexpr size_t steps = 10000UL;
+// Yes this should become part of the above class but I'm feeling lazy right now and just want this number
 
 void sim_runner(Simulation::SimulationContext& sim) {
-  while (true) {
+  sim.set_free_run(true);
+  for (size_t i = 0; i < steps; i++) {
     sim.run();
   }
 }
 
 
-int main() {
+TEST_F(SimulationTest, Performance) {
   Simulation::SimulationContext sim;
 
   sim.set_boundaries(x_width, y_width, z_width);
@@ -29,7 +39,7 @@ int main() {
   
   // 100 particles with random initial velocities
 
-  constexpr int vmax = 250;
+  constexpr int vmax = 100;
 
   for (size_t i = 0; i < number_particles; i++) {
     auto vx = rand() % vmax - (vmax / 2);
@@ -44,11 +54,14 @@ int main() {
     sim.add_particle(v, p);
   }
 
-  std::thread window(Graphics::SimulationWindow, std::ref(sim));
+  auto start = std::chrono::steady_clock::now();
   std::thread sim_thread(sim_runner, std::ref(sim));
-
-  window.join();
   sim_thread.join();
+  auto end = std::chrono::steady_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
-  return 0;
+  std::cout << "Elapsed Time: " << elapsed << "us" << std::endl;
+
+  // This was consistently coming out to roughly 4.9s, so let's be strict for now and trigger if it goes above 5
+  ASSERT_LT(elapsed, 5e6);
 }

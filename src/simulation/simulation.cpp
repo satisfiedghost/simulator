@@ -18,8 +18,10 @@ void SimulationContext::add_particle(const Vector<float>& v, const Vector<float>
 
 void SimulationContext::run() {
   auto now = m_sim_clock.now();
+  auto elapsed = chrono::duration_cast<chrono::microseconds>(now - m_tock);
 
-  if (now - m_tock < SIM_RESOLUTION_US) {
+  // If we're free running, just plow ahead
+  if (!m_free_run && elapsed < SIM_RESOLUTION_US) {
     return;
   }
 
@@ -107,6 +109,10 @@ void SimulationContext::set_boundaries(float x, float y, float z) {
   m_boundaries[WallIdx::FRONT].position = z_half;
   m_boundaries[WallIdx::FRONT].normal = Vector<float>(0, 0, -1);
   m_boundaries[WallIdx::FRONT].inverse = Vector<float>(1, 1, -1);
+}
+
+void SimulationContext::set_free_run(bool free_run) {
+  m_free_run = free_run;
 }
 
 // by default, there are walls stored as far left as possible

@@ -8,7 +8,7 @@ LDFLAGS := -lsfml-graphics -lsfml-window -lsfml-system -pthread
 all: CPPFLAGS += -O3
 debug: CPPFLAGS += -DDEBUG -g
 
-.PHONY: all clean clena debug
+.PHONY: all clean clena debug test
 
 EXE := $(BIN_DIR)/sim
 
@@ -19,7 +19,7 @@ $(info Found source files $(SRC))
 OBJ := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC))
 $(info OBJ is $(OBJ))
 
-all: $(EXE)
+all: $(EXE) test
 
 $(EXE): $(OBJ) | $(BIN_DIR)
 	$(CXX) $^ $(LDFLAGS) -o $@ 
@@ -40,3 +40,10 @@ clean:
 clena: clean
 
 debug: $(EXE)
+
+# Hacky, but they're tests...
+test:
+	(cd tst && cmake -S . -B build)
+	(cd tst && cmake --build build)
+	tst/build/test_sim
+	tst/build/test_vector
