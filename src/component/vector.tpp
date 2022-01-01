@@ -55,9 +55,7 @@ Vector<T> operator*(const Vector<T>& v, const T s) {
 
 template<typename T>
 Vector<T> operator*(const T s, const Vector<T>& v) {
-  return Vector<T>(v.m_x * s,
-                   v.m_y * s,
-                   v.m_z * s);
+  return v * s;
 }
 
 template<typename T>
