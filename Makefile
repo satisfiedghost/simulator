@@ -3,7 +3,7 @@ OBJ_DIR := obj
 BIN_DIR := bin
 
 CPPFLAGS := -Iinclude -Isrc/component -MP -MMD -Wall -Wextra -Werror
-LDFLAGS := -lsfml-graphics -lsfml-window -lsfml-system -pthread
+LDFLAGS := -lsfml-graphics -lsfml-window -lsfml-system -pthread -lboost_program_options
 
 all: CPPFLAGS += -O2
 sim: CPPFLAGS += -O2
