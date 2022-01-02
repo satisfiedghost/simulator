@@ -1,16 +1,20 @@
 SRC_DIR := src
 OBJ_DIR := obj
 BIN_DIR := bin
+INCLUDE_DIR := include
 
-CPPFLAGS := -Iinclude -Isrc/component -MP -MMD -Wall -Wextra -Werror
-LDFLAGS := -lsfml-graphics -lsfml-window -lsfml-system -pthread -lboost_program_options
+CPPFLAGS := -Iinclude -Isrc/component -MP -MMD -Wall -Wextra -Werror -fopenmp
+LDFLAGS := -lsfml-graphics -lsfml-window -lsfml-system -pthread -lboost_program_options -fopenmp
 
+# playing with some parallelization here... but performance is mixed
+parallel: CPPFLAGS += -O2 -fopenmp -DPARALLELIZE_FOR_LOOPS
+parallel: LDFLAGS += -fopenmp
 all: CPPFLAGS += -O2
 sim: CPPFLAGS += -O2
 test: CPPFLAGS += -O2
 debug: CPPFLAGS += -DDEBUG -g
 
-.PHONY: all clean clena debug test
+.PHONY: all clean clena
 
 EXE := $(BIN_DIR)/sim
 
@@ -21,22 +25,16 @@ $(info Found source files $(SRC))
 OBJ := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC))
 $(info OBJ is $(OBJ))
 
-
 all: $(EXE) test
 
 sim: $(EXE)
 
-$(EXE): $(OBJ) | $(BIN_DIR)
-	$(CXX) $^ $(LDFLAGS) -o $@
+parallel: $(EXE)
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
-	$(CXX) $(CPPFLAGS) -c $< -o $@
+debug: $(EXE)
 
-$(OBJ_DIR):
-	mkdir -p $@ $@/simulation $@/graphics
-
-$(BIN_DIR):
-	mkdir -p $@
+# I make this typo constantly
+clena: clean
 
 clean:
 	@$(RM) -rv $(OBJ_DIR) $(BIN_DIR)
@@ -51,12 +49,6 @@ clean:
 	@$(RM) -rv tst/lib/
 	@$(RM) -rv tst/*_include.cmake
 
-
-# I make this typo constantly
-clena: clean
-
-debug: $(EXE)
-
 # Hacky, but they're tests...
 test: $(OBJ)
 	(cd tst && cmake -S . -B build)
@@ -64,3 +56,15 @@ test: $(OBJ)
 	tst/build/test_sim
 	tst/build/test_vector
 	tst/build/test_particle
+
+$(EXE): $(OBJ) | $(BIN_DIR)
+	$(CXX) $^ $(LDFLAGS) -o $@
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
+	$(CXX) $(CPPFLAGS) -c $< -o $@
+
+$(OBJ_DIR):
+	mkdir -p $@ $@/simulation $@/graphics $@/cli
+
+$(BIN_DIR):
+	mkdir -p $@

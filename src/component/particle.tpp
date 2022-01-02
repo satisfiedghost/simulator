@@ -1,5 +1,6 @@
 // Prevent users of particle.h from including these libs
 #ifndef PARTICLE_TPP_INCLUDE
+#include "sim_settings.h"
 #include <cmath>
 #endif
 #define PARTICLE_TPP_INCLUDE
@@ -21,7 +22,7 @@ Status Particle<T>::collide(Particle<T>& other) {
   auto dist = m_position - other.m_position;
 
   // nope too far away
-  if (dist.magnitude > RADIUS * 2) {
+  if (dist.magnitude > m_radius * 2) {
     return Status::None;
   }
 
@@ -38,12 +39,12 @@ Status Particle<T>::collide(Particle<T>& other) {
   auto this_ker = std::pow((*this).m_velocity.magnitude, 2);
   auto other_ker = std::pow(other.m_velocity.magnitude, 2);
   auto total_pre_ker = this_ker + other_ker;
-  std::cout << "Collision detected!" << std::endl;
+  std::cout << "*******************Collision detected!*******************" << std::endl;
   std::cout << "This particle: " << std::endl << (*this) << std::endl;;
-  std::cout << "This KER: " << this_ker << std::endl;
+  std::cout << "This KER: " << this_ker << std::endl << std::endl;
   std::cout << "Other particle: " <<  std::endl << other << std::endl;
-  std::cout << "Other KER: " << other_ker << std::endl;
-  std::cout << "Total KER: " << total_pre_ker << std::endl;
+  std::cout << "Other KER: " << other_ker << std::endl << std::endl;
+  std::cout << "Total KER: " << total_pre_ker << std::endl << std::endl;;
 #endif
 
   // Got some work to do.
@@ -85,14 +86,14 @@ Status Particle<T>::collide(Particle<T>& other) {
   std::cout << "Impulse unit vector: " << impulse_unit << std::endl;
   std::cout << "Impulse vector: " << impulse_vector << std::endl;
   std::cout << "Dist: " << dist << std::endl;
-  std::cout << "Vdiff: " << v_diff << std::endl;
+  std::cout << "Vdiff: " << v_diff << std::endl << std::endl;;
   std::cout << "This particle now: " << (*this) << std::endl;
-  std::cout << "This new KER: " << this_ker << std::endl;
+  std::cout << "This new KER: " << this_ker << std::endl << std::endl;;
   std::cout << "Other particle now: " << other << std::endl;
-  std::cout << "Other new KER: " << other_ker << std::endl;
+  std::cout << "Other new KER: " << other_ker << std::endl << std::endl;;
   std::cout << "Total new KER: " << this_ker + other_ker << std::endl;
   std::cout << "Diff KER: " << (this_ker + other_ker) - total_pre_ker << std::endl;
-  std::cout << std::endl;
+  std::cout << "^^^^^^^^^^^^^^^^^^End Collision Data^^^^^^^^^^^^^^^^^^" << std::endl << std::endl;
 #endif
   // that's it!
   return Status::Success;
@@ -105,7 +106,7 @@ void Particle<T>::bounce (const Vector<T>& inverse) {
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const Particle<T>& p) {
-  os << "UID: " << p.uid.get() << std::endl;
+  os << "UID: " << p.uid.get()  << ", Radius: " << p.get_radius() << std::endl;
   os << "V : " << p.m_velocity << std::endl;
   os << "P : " << p.m_position;
   return os;

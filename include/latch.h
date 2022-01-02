@@ -26,7 +26,7 @@ public:
   }
 
   // get the value
-  T get() const {
+  const T& get() const {
     return m_value;
   }
 private:
