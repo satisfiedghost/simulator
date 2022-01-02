@@ -13,7 +13,7 @@ You will need the following:
 * SFML
   * install `libsfml-dev` with your package manager or see https://www.sfml-dev.org/tutorials/2.5/
 
-To make the core program, simplay clone this repo and run `make sim`
+To make the core program, simply clone this repo and run `make sim`
 * The resultant binary is placed in `./bin/sim`
 * Run `./bin/sim` for a demo proram or `./bin/sim --help` to see available options
 # Todo / Improvements / Bugs
