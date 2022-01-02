@@ -1,145 +1,78 @@
 #include "window.h"
+#include "cli.h"
 #include <thread>
 #include <time.h>
 #include <random>
 #include <cmath>
 #include <chrono>
 
-#include <boost/program_options.hpp>
-
-constexpr size_t x_width = 1600;
-constexpr size_t y_width = 800;
-constexpr size_t z_width = 1000;
-
-namespace po = boost::program_options;
 namespace chrono = std::chrono;
 
-void sim_runner(Simulation::SimulationContext& sim, float delay = 0) {
-  if (delay > 0) {
-    auto start = chrono::steady_clock::now();
-    chrono::duration<float> elapsed;
-    do {
-      auto now = chrono::steady_clock::now();
-      elapsed = now - start;
-    } while (elapsed.count() < delay);
-  }
-  while(true) {
-    sim.run();
-  }
-}
+// defined below, setup our initial conditions
+static void set_initial_conditions(Simulation::SimulationContext& sim, Simulation::SimSettings settings);
 
 int main(int argc, char** argv) {
-  size_t number_particles;
-  int vmax = 0;
-  int vmin = 0;
-  float angle = 0;
-  bool random_angle = true;
-  std::vector<int> color;
-  std::vector<int> color_range;
-  bool display_mode = false;
-  float delay = 0;
-
-  po::options_description desc("Allowed options");
-  desc.add_options()
-      ("help", "Display this help message.")
-      ("pcount", po::value<size_t>(&number_particles)->default_value(400), "Number of particles.")
-      ("vmax", po::value<int>(&vmax)->default_value(250), "Maximum starting velocity.")
-      ("vmin", po::value<int>(&vmin)->default_value(0), "Minimum starting velocity.")
-      ("angle", po::value<float>(&angle), "Start all particles travelling at this angle (in degrees).")
-      ("color", po::value<std::vector<int>>()->multitoken(), "Color in R G B")
-      ("color-range", po::value<std::vector<int>>()->multitoken(), "Requires --color, smooths one color to another.")
-      ("display", po::bool_switch(&display_mode)->default_value(false), "Zero velocity, just view colors.")
-      ("delay", po::value(&delay)->default_value(0), "Delay before we start running the simulation, in seconds.")
-  ;
+  Simulation::SimulationContext sim;
+  Simulation::SimSettings settings = Simulation::DefaultSettings;
 
   po::variables_map vm;
-  try {
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-  } catch (const std::exception& e) {
-    std::cout << e.what() << std::endl;
-    std::cout << desc << std::endl;
+  if (!parse_cli_args(argc, argv, vm, settings)) {
+    // bye!
+    std::cout << "Failed to parse arguments, terminating." << std::endl;
     return 1;
+  } else if (vm.count("help")) {
+    return 0;
   }
 
-  if (vm.count("help")) {
-      std::cout << desc << std::endl;
-      return 1;
-  }
+  set_initial_conditions(sim, settings);
 
-  if (vm.count("angle")) {
-    random_angle = false;
-  }
+  std::thread window_thread(Graphics::SimulationWindowThread, std::ref(sim), settings);
+  std::thread sim_thread(Simulation::SimulationContextThread, std::ref(sim), settings);
 
-  if (vm.count("vmax")) {
-    if (vm["vmax"].as<int>() == 0) {
-      display_mode = true;
-    }
-  }
+  window_thread.join();
+  sim_thread.join();
 
-  auto validate_rgb = [](const std::vector<int>& v) {
-    if (v.size() != 3 or *std::max_element(v.begin(), v.end()) > 255) {
-      std::cout << "Invalid rgb: " << std::endl;
-      for (auto c : v) {
-        std::cout << c << " ";
-      }
-      std::cout << std::endl;
-      return false;
-    }
-    return true;
-  };
+  std::cout << "Goodbye!" << std::endl;
+  return 0;
+}
 
-  if (vm.count("color")) {
-    color = vm["color"].as<std::vector<int>>();
-    if (!validate_rgb(color)) {
-      return 1;
-    }
-  }
-
-  if (vm.count("color-range") && !vm.count("color")) {
-    std::cout << "See --help, color-range requires color" << std::endl;
-    return 1;
-  } else if (vm.count("color-range")) {
-    color_range = vm["color-range"].as<std::vector<int>>();
-    if (!validate_rgb(color_range)) {
-      return 1;
-    }
-  }
-
-  if (vm.count("color-range")) {
-    color_range = vm["color-range"].as<std::vector<int>>();
-  }
-
+// Consider moving to its own TU at some point...
+static void set_initial_conditions(Simulation::SimulationContext& sim, Simulation::SimSettings settings) {
   auto deg_to_rad = [](float angle) {
     return angle * M_PI / 180;
   };
 
+  // TODO this should be more customizeable... but for now we just try to make this fit well on your monitor
+  auto boundaries = Graphics::get_window_size();
+  settings.x_width = std::get<0>(boundaries);
+  settings.y_width = std::get<1>(boundaries);
+  settings.z_width = std::get<2>(boundaries);
 
-  Simulation::SimulationContext sim;
-  sim.set_boundaries(x_width, y_width, z_width);
+  sim.set_boundaries(settings.x_width, settings.y_width, settings.z_width);
 
-  const size_t grid = std::floor(std::sqrt(number_particles));
+  const size_t grid = std::ceil(std::sqrt(settings.number_particles));
 
-  size_t x_spacing = (x_width - 100) / grid;
-  size_t y_spacing = (y_width - 100) / grid;
+  auto placement_buffer = static_cast<size_t>(std::ceil(static_cast<float>(settings.particle_radius) * 1.2));
+  size_t x_spacing = (settings.x_width - placement_buffer) / grid;
+  size_t y_spacing = (settings.y_width - placement_buffer) / grid;
 
-  std::random_device rd;  // Will be used to obtain a seed for the
+  std::random_device rd;  // Will be used to obtain a seed for the RNG engine.
   std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
-  std::uniform_int_distribution<int> vel_dist(0, vmax * 2);
+  std::uniform_int_distribution<int> vel_dist(0, settings.vmax * 2);
 
-  for (size_t i = 0; i < number_particles; i++) {
+  for (size_t i = 0; i < settings.number_particles; i++) {
     auto vx = 0, vy = 0;
     // vectorwise adds up to vmax
-    if (!display_mode) {
-      if (random_angle) {
-        vy = vel_dist(gen) % vmax - (vmax / 2);
-        vx = std::sqrt(std::pow(vmax, 2) - std::pow(vy, 2));
+    if (!settings.display_mode) {
+      if (settings.random_angle) {
+        vy = vel_dist(gen) % settings.vmax - (settings.vmax / 2);
+        vx = std::sqrt(std::pow(settings.vmax, 2) - std::pow(vy, 2));
         if (static_cast<int>(vx) % 2) {
           vx *= -1;
         }
       } else {
-        auto rads = deg_to_rad(angle);
-        auto v_mag = std::max(vmin, vel_dist(gen) / 2);
+        auto rads = deg_to_rad(settings.angle);
+        auto v_mag = std::max(settings.vmin, vel_dist(gen) / 2);
         vx = std::cos(rads) * v_mag;
         vy = std::sin(rads) * v_mag;
       }
@@ -147,27 +80,20 @@ int main(int argc, char** argv) {
 
     Simulation::Vector<float> velocity{static_cast<float>(vx), static_cast<float>(vy), 0.f};
 
-    if (!display_mode) {
-      if (velocity.magnitude < vmin) {
-        velocity = velocity.collinear_vector(vmin);
-      } else if (velocity.magnitude > vmax) {
-        velocity = velocity.collinear_vector(vmax);
+    if (!settings.display_mode) {
+      if (velocity.magnitude < settings.vmin) {
+        velocity = velocity.collinear_vector(settings.vmin);
+      } else if (velocity.magnitude > settings.vmax) {
+        velocity = velocity.collinear_vector(settings.vmax);
       }
     }
 
-    int px = (-(x_width / 2) + 100) + (i % grid) * x_spacing;
-    int py = (y_width / 2) - 100 - (i / grid) * y_spacing;
+    int px = ((-(settings.x_width / 2)) + (i % grid) * x_spacing + placement_buffer / 2) + x_spacing / 2;
+    int py = ((settings.y_width / 2) - (i / grid) * y_spacing - placement_buffer / 2) - y_spacing / 2;
 
-    Simulation::Vector<float> p{static_cast<float>(px), static_cast<float>(py), 0.f};
+    Simulation::Vector<float> position{static_cast<float>(px), static_cast<float>(py), 0.f};
+    Simulation::Particle<float> particle(settings.particle_radius, velocity, position);
 
-    sim.add_particle(velocity, p);
+    sim.add_particle(particle);
   }
-
-  std::thread window(Graphics::SimulationWindow, std::ref(sim), color, color_range);
-  std::thread sim_thread(sim_runner, std::ref(sim), delay);
-
-  window.join();
-  sim_thread.join();
-
-  return 0;
 }

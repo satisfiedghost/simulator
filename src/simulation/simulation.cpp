@@ -1,7 +1,6 @@
 #include "simulation.h"
-#include<limits>
+#include <limits>
 #include <algorithm>
-
 
 using namespace Simulation;
 
@@ -53,6 +52,9 @@ void SimulationContext::run() {
   // now check for collisions
   // we only allow 1 collision per 2 partcles per frame so the
   // one with the lower index will always "collide" first
+#ifdef PARALLELIZE_FOR_LOOPS
+  #pragma omp parallel
+#endif
   for (size_t j = 0; j < m_working_particles.size(); j++) {
     for (size_t k = j + 1; k < m_working_particles.size(); k++) {
       Status s = m_working_particles[j].collide(m_working_particles[k]);
@@ -79,7 +81,7 @@ void SimulationContext::run() {
 
       // convert to a 1D position
       auto rel_pos = (p.get_position() * w.normal.abs()).magnitude;
-      if (std::abs(rel_pos - w.position) <= Particle<float>::RADIUS) {
+      if (std::abs(rel_pos - w.position) <= m_settings.get().particle_radius) {
         p.bounce(w.inverse);
         break;
       }
@@ -140,9 +142,31 @@ void SimulationContext::set_free_run(bool free_run) {
   m_free_run = free_run;
 }
 
+void SimulationContext::set_settings(const SimSettings& settings) {
+  m_settings = LatchingValue<SimSettings>(settings);
+}
+
+const SimSettings& SimulationContext::get_settings() const {
+  return m_settings.get();
+}
+
 // by default, there are walls stored as far left as possible
 SimulationContext::Wall::Wall()
   : position(std::numeric_limits<float>::min())
   , normal()
   , inverse()
   {}
+
+void Simulation::SimulationContextThread(SimulationContext& sim, SimSettings settings) {
+  if (settings.delay > 0) {
+    auto start = chrono::steady_clock::now();
+    chrono::duration<float> elapsed;
+    do {
+      auto now = chrono::steady_clock::now();
+      elapsed = now - start;
+    } while (elapsed.count() < settings.delay);
+  }
+  while(true) {
+    sim.run();
+  }
+}

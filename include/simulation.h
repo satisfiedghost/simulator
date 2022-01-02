@@ -1,6 +1,8 @@
 #include "particle.h"
+#include "sim_settings.h"
 #include <vector>
 #include "sim_time.h"
+#include "sim_settings.h"
 #include <array>
 #include <tuple>
 
@@ -11,6 +13,13 @@ namespace Simulation {
  */
 class SimulationContext {
 public:
+  // Construct a simulation with settings
+  SimulationContext(SimSettings settings)
+                    : SimulationContext() {
+                      m_settings = settings;
+                    }
+
+  // Or do it later.
   SimulationContext()
                    : m_working_particles()
                    , m_prepared_particles()
@@ -19,6 +28,7 @@ public:
                    , m_tock(start)
                    , m_free_run(false)
                    , should_calc_next_step(true)
+                   , m_settings(DefaultSettings)
                    {}
 
   // get the time of the simulation
@@ -43,6 +53,12 @@ public:
   // If true, run let the system free run
   // If false, run in steps of the time resolution
   void set_free_run(bool);
+
+  // Set the settings
+  void set_settings(const SimSettings&);
+
+  // View the settings this simulation is using
+  const SimSettings& get_settings() const;
 
 private:
   void add_particle_internal(Particle<float>&);
@@ -91,6 +107,14 @@ private:
 
   // Whether we should calculate the next step in the simulation
   bool should_calc_next_step;
+
+  // Invariant settings for the system (well as long as you don't call update settings at runtime, which might be fun)
+  LatchingValue<SimSettings> m_settings;
 };
+
+// run me!
+// run me!
+// come on, run me!
+void SimulationContextThread(SimulationContext& sim, SimSettings settings);
 
 } // Simulation

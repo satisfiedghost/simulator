@@ -2,17 +2,19 @@
 #include "particle.h"
 #include <math.h>
 #include <array>
+#include "sim_settings.h"
 
 using namespace Simulation;
 
 class ParticleTest :
   public ::testing::Test {};
 
+constexpr size_t PARTICLE_RADIUS = 20;
 
 // test our assumptions about Particle Collisions
 TEST_F(ParticleTest, Collisions2D) {
   constexpr size_t N_ANGLES = 360;
-  constexpr float DISTANCE = 2.f * static_cast<float>(Particle<float>::RADIUS) - 0.05f; // a reasonable trigger for the simulation
+  constexpr float DISTANCE = 2.f * static_cast<float>(PARTICLE_RADIUS) - 0.05f; // a reasonable trigger for the simulation
 
   // unfortunately this test would take just shy of 2 years to run at the fidelity I'd like
   constexpr size_t CHECK_RADS = 100;
@@ -33,9 +35,9 @@ TEST_F(ParticleTest, Collisions2D) {
     milli_rads[i] = i * radian_step;
   }
 
-  size_t scenario_count = milli_rads.size() * velocities.size() * velocities.size() 
+  size_t scenario_count = milli_rads.size() * velocities.size() * velocities.size()
                           * milli_rads.size() * milli_rads.size();
-  
+
   std::cout << "Running through " << scenario_count << " test cases." << std::endl;
 
   auto deg_to_rad = [](float angle) {
@@ -108,11 +110,4 @@ TEST_F(ParticleTest, Collisions2D) {
     std::cout << "We've run " << scenarios_run << " scenarios and are "
     << static_cast<float>(outer_loop_cnt) / static_cast<float>(milli_rads.size()) << "% done" << std::endl;
   }
-  //Particle a;
-  //Particle b;
-  //constexpr size_t radius = Particle::RADIUS;
-
-  //a.uid.latch(1);
-  //a.uid.latch(2);
-
 }
