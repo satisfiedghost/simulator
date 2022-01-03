@@ -79,8 +79,8 @@ TEST_F(SimulationTest, Performance) {
     int px = (-(x_width / 2) + 100) + (i % grid) * x_spacing;
     int py = (y_width / 2) - 100 - (i / grid) * y_spacing;
 
-    Simulation::Vector<float> v{static_cast<float>(vx), static_cast<float>(vy), 0.f};
-    Simulation::Vector<float> p{static_cast<float>(px), static_cast<float>(py), 0.f};
+    Component::Vector<float> v{static_cast<float>(vx), static_cast<float>(vy), 0.f};
+    Component::Vector<float> p{static_cast<float>(px), static_cast<float>(py), 0.f};
 
     sim.add_particle(v, p);
   }

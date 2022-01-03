@@ -4,7 +4,7 @@
 #endif
 #define VECTOR_TPP_INCLUDE
 
-namespace Simulation {
+namespace Component {
 
 template<typename T>
 Vector<T>::Vector(T x, T y, T z)
@@ -12,10 +12,10 @@ Vector<T>::Vector(T x, T y, T z)
         , m_y(y)
         , m_z(z)
         {
-          magnitude = std::sqrt(
-                      std::pow(m_x, 2) +
-                      std::pow(m_y, 2) +
-                      std::pow(m_z, 2));
+          magnitude = ::sqrtf(
+                      ::powf(m_x, 2) +
+                      ::powf(m_y, 2) +
+                      ::powf(m_z, 2));
         }
 
 template<typename T>
@@ -107,9 +107,14 @@ std::ostream& operator<<(std::ostream& os, const Vector<T>& v) {
 
 template<typename T, typename S>
 Vector<T> operator*(const Vector<T>& v, const S s) {
-  return Vector<T>(v.m_x * s,
-                   v.m_y * s,
-                   v.m_z * s);
+  return Vector<T>(v.m_x * static_cast<T>(s),
+                   v.m_y * static_cast<T>(s),
+                   v.m_z * static_cast<T>(s));
+}
+
+template<typename T, typename S>
+Vector<T> operator*(const S s, const Vector<T>& v) {
+  return v * s;
 }
 
 // multiply two vectors
