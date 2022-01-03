@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "particle.h"
+#include "phys.h"
 #include <math.h>
 #include <array>
 #include "sim_settings.h"
@@ -82,7 +83,7 @@ TEST_F(ParticleTest, Collisions2D) {
             auto energy_b_before = std::pow(b.get_velocity().magnitude, 2);
             auto total_energy_before = energy_a_before + energy_b_before;
 
-            a.collide(b);
+            Physics::collide(a, b);
             auto energy_a_after = std::pow(a.get_velocity().magnitude, 2);
             auto energy_b_after = std::pow(b.get_velocity().magnitude, 2);
             auto total_energy_after = energy_a_after + energy_b_after;

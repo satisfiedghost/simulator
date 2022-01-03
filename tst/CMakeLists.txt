@@ -43,6 +43,7 @@ target_include_directories(
   test_particle PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/component>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/phys>
 )
 
 target_include_directories(

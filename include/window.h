@@ -1,8 +1,8 @@
 #pragma once
-
 #include "simulation.h"
-#include <vector>
+
 #include <tuple>
+#include <vector>
 
 namespace Graphics {
 

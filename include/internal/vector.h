@@ -1,8 +1,10 @@
+#pragma once
 #include <cstdint>
 #include <iostream>
 #include <type_traits>
 
-namespace Simulation {
+namespace Component {
+
 template<typename T>
 struct Vector {
   static_assert(!std::is_integral<T>::value, "Integral types are not yet supported.");
@@ -65,6 +67,10 @@ Vector<T> operator%(const Vector<T>&, const Vector<T>&);
 // scalar multiplaction with other types
 template<typename T, typename S>
 Vector<T> operator*(const Vector<T>&, const S);
+
+// scalar multiplaction with other types
+template<typename T, typename S>
+Vector<T> operator*(const S, const Vector<T>&);
 
 // multiply two vectors
 template<typename T>

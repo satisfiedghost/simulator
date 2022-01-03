@@ -1,23 +1,55 @@
 #include "cli.h"
+
 #include <iostream>
+
+namespace Cli {
 
 bool parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::SimSettings& settings) {
   po::options_description desc("Allowed options");
   desc.add_options()
       ("help", "Display this help message.")
-      ("pcount", po::value<size_t>(&settings.number_particles)->default_value(Simulation::DefaultSettings.number_particles), "Number of particles.")
-      ("vmax", po::value<int>(&settings.vmax)->default_value(Simulation::DefaultSettings.vmax), "Maximum starting velocity.")
-      ("vmin", po::value<int>(&settings.vmin)->default_value(Simulation::DefaultSettings.vmin), "Minimum starting velocity.")
-      ("vall", po::value<int>(), "Start all particles at this velocity. Overrides --vmin and --vmax.")
-      ("angle", po::value<float>(&settings.angle), "Start all particles travelling at this angle (in degrees).")
-      ("radius", po::value<size_t>(&settings.particle_radius)->default_value(Simulation::DefaultSettings.particle_radius), "Particle radii, whole number.")
-      ("color", po::value<std::vector<int>>()->multitoken(), "Color in R G B")
-      ("color-range", po::value<std::vector<int>>()->multitoken(), "Requires --color, smooths one color to another.")
-      ("display", po::bool_switch(&settings.display_mode)->default_value(Simulation::DefaultSettings.display_mode), "Zero velocity, just view colors.")
-      ("delay", po::value(&settings.delay)->default_value(Simulation::DefaultSettings.delay), "Delay before we start running the simulation, in seconds.")
-      ("no-full-screen", po::bool_switch()->default_value(false), "Disable default fullscreen.")
-
-  ;
+      ("pcount",
+        po::value<size_t>(&settings.number_particles)->default_value(Simulation::DefaultSettings.number_particles),
+        "Number of particles.")
+      ("vmin",
+        po::value<int>(&settings.vmin)->default_value(Simulation::DefaultSettings.vmin),
+        "Minimum starting velocity.")
+      ("vmax",
+        po::value<int>(&settings.vmax)->default_value(Simulation::DefaultSettings.vmax),
+        "Maximum starting velocity.")
+      ("vall",
+        po::value<int>(),
+        "Start all particles at this velocity. Overrides --vmin and --vmax.")
+      ("mass-min",
+        po::value<float>(&settings.mass_min)->default_value(Simulation::DefaultSettings.mass_min),
+        "Minimum mass allowed for a particle")
+      ("mass-max",
+        po::value<float>(&settings.mass_max)->default_value(Simulation::DefaultSettings.mass_max),
+        "Maximum mass allowed for a particle")
+      ("angle",
+        po::value<float>(&settings.angle),
+        "Start all particles travelling at this angle (in degrees).")
+      ("radius-min",
+        po::value<size_t>(&settings.radius_min)->default_value(Simulation::DefaultSettings.radius_min),
+        "Particle radii, whole number.")
+      ("radius-max",
+        po::value<size_t>(&settings.radius_max)->default_value(Simulation::DefaultSettings.radius_max),
+        "Particle radii, whole number.")
+      ("color",
+        po::value<std::vector<int>>()->multitoken(),
+        "Color in R G B")
+      ("color-range",
+        po::value<std::vector<int>>()->multitoken(),
+        "Requires --color, smooths one color to another.")
+      ("display",
+        po::bool_switch(&settings.display_mode)->default_value(Simulation::DefaultSettings.display_mode),
+        "Zero velocity, just view colors.")
+      ("delay",
+        po::value(&settings.delay)->default_value(Simulation::DefaultSettings.delay),
+        "Delay before we start running the simulation, in seconds.")
+      ("no-full-screen",
+        po::bool_switch()->default_value(false),
+        "Disable default fullscreen.");
 
   // I normally detest exceptions, but this library throws one reasonably, no point guessing what
   // the user might've meant if the arguments aren't correct
@@ -41,6 +73,13 @@ bool parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::Si
     if (vm.count("vmax") && vm.count("vmin")) {
       if (vm["vmax"].as<int>() < vm["vmin"].as<int>()) {
         std::cout << "See --help, Must have vmax > vmin." << std::endl;
+        return false;
+      }
+    }
+
+    if (vm.count("mass-max") && vm.count("mass-min")) {
+      if (vm["mass-max"].as<float>() < vm["mass-min"].as<float>()) {
+        std::cout << "See --help, Must have mass-max > mass-min." << std::endl;
         return false;
       }
     }
@@ -95,3 +134,5 @@ bool parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::Si
   }
   return true;
 }
+
+} // namespace Cli

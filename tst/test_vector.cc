@@ -9,7 +9,7 @@ class CombinationsTest :
 
 // Magnitude Calculation
 TEST_P(CombinationsTest, Magnitude) {
-  Simulation::Vector<float> test1(std::get<0>(GetParam()),
+  Component::Vector<float> test1(std::get<0>(GetParam()),
                                   std::get<1>(GetParam()),
                                   std::get<2>(GetParam()));
   ASSERT_FLOAT_EQ(test1.magnitude, std::sqrt(3));

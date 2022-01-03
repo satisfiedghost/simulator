@@ -1,22 +1,24 @@
 #include "simulation.h"
-#include <limits>
-#include <algorithm>
+#include "phys.h"
 
-using namespace Simulation;
+#include <algorithm>
+#include <limits>
+
+namespace Simulation {
 
 chrono::time_point<chrono::steady_clock> SimulationContext::get_simulation_time() const {
   return m_sim_clock.now();
 }
 
-void SimulationContext::add_particle(Particle<float> p) {
+void SimulationContext::add_particle(Component::Particle<float> p) {
   add_particle_internal(p);
 }
 
-void SimulationContext::add_particle(const Vector<float>& v, const Vector<float> & p) {
-  add_particle(Particle<float>(v, p));
+void SimulationContext::add_particle(const Component::Vector<float>& v, const Component::Vector<float> & p) {
+  add_particle(Component::Particle<float>(v, p));
 }
 
-void SimulationContext::add_particle_internal(Particle<float>& p) {
+void SimulationContext::add_particle_internal(Component::Particle<float>& p) {
   size_t uid = m_working_particles.size() + 1;
   p.uid.latch(uid);
   // TODO we don't support adding particles at runtime (properly yet)
@@ -57,12 +59,13 @@ void SimulationContext::run() {
 #endif
   for (size_t j = 0; j < m_working_particles.size(); j++) {
     for (size_t k = j + 1; k < m_working_particles.size(); k++) {
-      Status s = m_working_particles[j].collide(m_working_particles[k]);
+      Status s = Physics::collide<float>(m_working_particles[j], m_working_particles[k]);
       switch(s) {
         case Status::None:
         case Status::Success:
-        break;
+          break;
         case Status::Impossible:
+        case Status::Inconsistent:
           m_impossible_count++;
         break;
       }
@@ -72,17 +75,7 @@ void SimulationContext::run() {
   // check if anyone has hit a wall
   for (auto& p : m_working_particles) {
     for (const auto& w : m_boundaries) {
-      // can't bounce off a wall if you're not traveling toward it....
-      auto rel_vel = (p.get_velocity() * w.normal.abs());
-
-      if (rel_vel * w.normal == rel_vel) {
-        continue;
-      }
-
-      // convert to a 1D position
-      auto rel_pos = (p.get_position() * w.normal.abs()).magnitude;
-      if (std::abs(rel_pos - w.position) <= m_settings.get().particle_radius) {
-        p.bounce(w.inverse);
+      if (Physics::bounce<float>(p, w) == Status::Success) {
         break;
       }
     }
@@ -99,43 +92,27 @@ void SimulationContext::run() {
     for (auto& p : m_working_particles) {
       std::cout << "Particle " << i << std::endl;
       std::cout << p << std::endl << std::endl;
-      total_energy += std::pow(p.get_velocity().magnitude, 2);
+      total_energy += ::powf(p.get_velocity().magnitude, 2);
       i++;
     }
-    std::cout << "Total System KER: " << total_energy << std::endl << std::endl;
+    std::cout << "Total System KER: " << total_energy << std::endl;
+    std::cout << "Impossible Situations: " << m_impossible_count << std::endl << std::endl;
   }
 #endif
 }
 
 // stand up for yourself
-void SimulationContext::set_boundaries(float x, float y, float z) {
-  auto x_half = x / 2;
-  auto y_half = y / 2;
-  auto z_half = z / 2;
+void SimulationContext::set_boundaries(size_t x, size_t y, size_t z) {
+  auto x_half = static_cast<float>(x) / 2.f;
+  auto y_half = static_cast<float>(y) / 2.f;
+  auto z_half = static_cast<float>(z) / 2.f;
 
-  m_boundaries[WallIdx::LEFT].position = -x_half;
-  m_boundaries[WallIdx::LEFT].normal = Vector<float>(1, 0, 0);
-  m_boundaries[WallIdx::LEFT].inverse = Vector<float>(-1, 1, 1);
-
-  m_boundaries[WallIdx::RIGHT].position = x_half;
-  m_boundaries[WallIdx::RIGHT].normal = Vector<float>(-1, 0, 0);
-  m_boundaries[WallIdx::RIGHT].inverse = Vector<float>(-1, 1, 1);
-
-  m_boundaries[WallIdx::BOTTOM].position = -y_half;
-  m_boundaries[WallIdx::BOTTOM].normal = Vector<float>(0, 1, 0);
-  m_boundaries[WallIdx::BOTTOM].inverse = Vector<float>(1, -1, 1);
-
-  m_boundaries[WallIdx::TOP].position = y_half;
-  m_boundaries[WallIdx::TOP].normal = Vector<float>(0, -1, 0);
-  m_boundaries[WallIdx::TOP].inverse = Vector<float>(1, -1, 1);
-
-  m_boundaries[WallIdx::BACK].position = -z_half;
-  m_boundaries[WallIdx::BACK].normal = Vector<float>(0, 0, 1);
-  m_boundaries[WallIdx::BACK].inverse = Vector<float>(1, 1, -1);
-
-  m_boundaries[WallIdx::FRONT].position = z_half;
-  m_boundaries[WallIdx::FRONT].normal = Vector<float>(0, 0, -1);
-  m_boundaries[WallIdx::FRONT].inverse = Vector<float>(1, 1, -1);
+  m_boundaries[WallIdx::LEFT] =   {-x_half, Component::Vector<float>(1, 0, 0),  Component::Vector<float>(-1, 1, 1)};
+  m_boundaries[WallIdx::RIGHT] =  {x_half,  Component::Vector<float>(-1, 0, 0), Component::Vector<float>(-1, 1, 1)};
+  m_boundaries[WallIdx::BOTTOM] = {-y_half, Component::Vector<float>(0, 1, 0),  Component::Vector<float>(1, -1, 1)};
+  m_boundaries[WallIdx::TOP] =    {y_half,  Component::Vector<float>(0, -1, 0), Component::Vector<float>(0, -1, 0)};
+  m_boundaries[WallIdx::BACK] =   {-z_half, Component::Vector<float>(0, 0, 1),  Component::Vector<float>(1, 1, -1)};
+  m_boundaries[WallIdx::FRONT] =  {z_half,  Component::Vector<float>(0, 0, -1), Component::Vector<float>(1, 1, -1)};
 }
 
 void SimulationContext::set_free_run(bool free_run) {
@@ -150,14 +127,7 @@ const SimSettings& SimulationContext::get_settings() const {
   return m_settings.get();
 }
 
-// by default, there are walls stored as far left as possible
-SimulationContext::Wall::Wall()
-  : position(std::numeric_limits<float>::min())
-  , normal()
-  , inverse()
-  {}
-
-void Simulation::SimulationContextThread(SimulationContext& sim, SimSettings settings) {
+void SimulationContextThread(SimulationContext& sim, SimSettings settings) {
   if (settings.delay > 0) {
     auto start = chrono::steady_clock::now();
     chrono::duration<float> elapsed;
@@ -170,3 +140,5 @@ void Simulation::SimulationContextThread(SimulationContext& sim, SimSettings set
     sim.run();
   }
 }
+
+} // namespace Simulation
