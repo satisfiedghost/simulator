@@ -1,6 +1,6 @@
 # Physics Simulator
 
-A simple physics engine. Written from scratch with minimal research to see what I come up with.
+A physics engine. Written from scratch with minimal research to see what I come up with.
 
 # Setup
 
