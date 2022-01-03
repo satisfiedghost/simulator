@@ -1,9 +1,10 @@
-#include <gtest/gtest.h>
 #include "component.h"
 #include "phys.h"
-#include <math.h>
-#include <array>
 #include "sim_settings.h"
+
+#include <array>
+#include <gtest/gtest.h>
+#include <math.h>
 
 using namespace Simulation;
 using Component::Vector;
@@ -89,18 +90,18 @@ TEST_F(ParticleTest, Collisions2D) {
             auto energy_a_after = std::pow(a.get_velocity().magnitude, 2);
             auto energy_b_after = std::pow(b.get_velocity().magnitude, 2);
             auto total_energy_after = energy_a_after + energy_b_after;
-              
+
             auto delta = total_energy_after - total_energy_before;
             scenarios_run++;
             // energy MUST be conserved!
-            ASSERT_LE(delta, 0.4)
-            << "Energy was not conserved!" << std::endl 
+            ASSERT_EQ(delta, 0)
+            << "Energy was not conserved!" << std::endl
             << "The energy before was " << total_energy_before << " and after was " << total_energy_after << std::endl
             << "This is a delta of " << delta << std::endl << "Here's some collision metadata: " << std::endl
             << "Va before: " << std::endl << a_velocity << std::endl << "Vb before: " << std::endl << b_velocity << std::endl
             << "Va after: " << std::endl << a.get_velocity() << std::endl << "Vb after: " << std::endl << b.get_velocity() << std::endl
             << "You might want to sketch out what this collision looked like, remember A is always centered at the origin" << std::endl 
-            << "B was centered at: " << std::endl << b_pos << std::endl 
+            << "B was centered at: " << std::endl << b_pos << std::endl
             << "Whichs puts the A->B vector at an angle of " << rad_to_degree(rad) << std::endl
             << "A's velocity vector was at an angle of " << rad_to_degree(v_a_rad) << std::endl
             << "B's velocity vecotor was at an angle of " << rad_to_degree(v_b_rad) << std::endl
@@ -111,6 +112,6 @@ TEST_F(ParticleTest, Collisions2D) {
     }
     outer_loop_cnt++;
     std::cout << "We've run " << scenarios_run << " scenarios and are "
-    << static_cast<float>(outer_loop_cnt) / static_cast<float>(milli_rads.size()) << "% done" << std::endl;
+    << static_cast<float>(outer_loop_cnt) / static_cast<float>(milli_rads.size()) * 100 << "% done" << std::endl;
   }
 }

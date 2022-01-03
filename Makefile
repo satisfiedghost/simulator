@@ -2,7 +2,7 @@ SRC_DIR := src
 OBJ_DIR := obj
 BIN_DIR := bin
 
-CPPFLAGS := -Iinclude -Isrc/component -Isrc/phys -MP -MMD -Wall -Wextra -Werror -Wconversion -fopenmp
+CPPFLAGS := -Iinclude -MP -MMD -Wall -Wextra -Werror -Wconversion -fopenmp
 LDFLAGS := -lsfml-graphics -lsfml-window -lsfml-system -pthread -lboost_program_options -fopenmp
 
 # playing with some parallelization here... but performance is mixed
@@ -11,7 +11,7 @@ parallel: LDFLAGS += -fopenmp
 all: CPPFLAGS += -O2
 sim: CPPFLAGS += -O2
 test: CPPFLAGS += -O2
-debug: CPPFLAGS += -DDEBUG -g
+debug: CPPFLAGS += -DDEBUG -Og -g
 
 .PHONY: all clean clena debug
 
@@ -75,7 +75,7 @@ $(OBJ_DIR)/%.debug.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	$(CXX) $(CPPFLAGS) -c $< -o $@
 
 $(OBJ_DIR):
-	mkdir -p $@ $@/simulation $@/graphics $@/cli $@/phys
+	mkdir -p $@ $@/component $@/simulation $@/graphics $@/cli $@/phys $@/graphics
 
 $(BIN_DIR):
 	mkdir -p $@

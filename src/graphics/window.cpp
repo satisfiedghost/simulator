@@ -24,7 +24,8 @@ struct DrawParticle {
   }
 };
 
-void SimulationWindowThread(const Simulation::SimulationContext& sim, Simulation::SimSettings settings) {
+template <typename T>
+void SimulationWindowThread(const Simulation::SimulationContext<T>& sim, Simulation::SimSettings settings) {
   std::vector<DrawParticle> draw_particles;
 
   bool user_color = false;
@@ -135,6 +136,9 @@ std::tuple<size_t, size_t, size_t> get_window_size() {
   auto desktop_mode = sf::VideoMode::getDesktopMode();
   return std::make_tuple(desktop_mode.width, desktop_mode.height, Simulation::DefaultSettings.z_width);
 }
+
+template void SimulationWindowThread(const Simulation::SimulationContext<float>& sim, Simulation::SimSettings settings);
+template void SimulationWindowThread(const Simulation::SimulationContext<double>& sim, Simulation::SimSettings settings);
 
 } // namespace Graphics
 #pragma GCC diagnostic pop

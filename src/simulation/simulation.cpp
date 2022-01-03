@@ -1,24 +1,28 @@
-#include "simulation.h"
 #include "phys.h"
+#include "simulation.h"
 
 #include <algorithm>
 #include <limits>
 
 namespace Simulation {
 
-chrono::time_point<chrono::steady_clock> SimulationContext::get_simulation_time() const {
+template<typename T>
+chrono::time_point<chrono::steady_clock> SimulationContext<T>::get_simulation_time() const {
   return m_sim_clock.now();
 }
 
-void SimulationContext::add_particle(Component::Particle<float> p) {
+template<typename T>
+void SimulationContext<T>::add_particle(Component::Particle<T> p) {
   add_particle_internal(p);
 }
 
-void SimulationContext::add_particle(const Component::Vector<float>& v, const Component::Vector<float> & p) {
-  add_particle(Component::Particle<float>(v, p));
+template<typename T>
+void SimulationContext<T>::add_particle(const Component::Vector<T>& v, const Component::Vector<T> & p) {
+  add_particle(Component::Particle<T>(v, p));
 }
 
-void SimulationContext::add_particle_internal(Component::Particle<float>& p) {
+template<typename T>
+void SimulationContext<T>::add_particle_internal(Component::Particle<T>& p) {
   size_t uid = m_working_particles.size() + 1;
   p.uid.latch(uid);
   // TODO we don't support adding particles at runtime (properly yet)
@@ -27,7 +31,8 @@ void SimulationContext::add_particle_internal(Component::Particle<float>& p) {
   m_prepared_particles.push_back(p);
 }
 
-void SimulationContext::run() {
+template<typename T>
+void SimulationContext<T>::run() {
   auto now = m_sim_clock.now();
   auto elapsed = chrono::duration_cast<chrono::microseconds>(now - m_tock);
 
@@ -59,7 +64,7 @@ void SimulationContext::run() {
 #endif
   for (size_t j = 0; j < m_working_particles.size(); j++) {
     for (size_t k = j + 1; k < m_working_particles.size(); k++) {
-      Status s = Physics::collide<float>(m_working_particles[j], m_working_particles[k]);
+      Status s = Physics::collide<T>(m_working_particles[j], m_working_particles[k]);
       switch(s) {
         case Status::None:
         case Status::Success:
@@ -75,7 +80,7 @@ void SimulationContext::run() {
   // check if anyone has hit a wall
   for (auto& p : m_working_particles) {
     for (const auto& w : m_boundaries) {
-      if (Physics::bounce<float>(p, w) == Status::Success) {
+      if (Physics::bounce<T>(p, w) == Status::Success) {
         break;
       }
     }
@@ -83,7 +88,7 @@ void SimulationContext::run() {
 
 #ifdef DEBUG
   // print every second
-  float total_energy = 0;
+  T total_energy = 0;
   static size_t last_frame = 0;
   if (m_step - last_frame > TICKS_PER_SECOND) {
     last_frame = m_step;
@@ -92,7 +97,7 @@ void SimulationContext::run() {
     for (auto& p : m_working_particles) {
       std::cout << "Particle " << i << std::endl;
       std::cout << p << std::endl << std::endl;
-      total_energy += ::powf(p.get_velocity().magnitude, 2);
+      total_energy += p.get_kinetic_energy();
       i++;
     }
     std::cout << "Total System KER: " << total_energy << std::endl;
@@ -102,32 +107,37 @@ void SimulationContext::run() {
 }
 
 // stand up for yourself
-void SimulationContext::set_boundaries(size_t x, size_t y, size_t z) {
-  auto x_half = static_cast<float>(x) / 2.f;
-  auto y_half = static_cast<float>(y) / 2.f;
-  auto z_half = static_cast<float>(z) / 2.f;
+template<typename T>
+void SimulationContext<T>::set_boundaries(size_t x, size_t y, size_t z) {
+  auto x_half = static_cast<T>(x) / static_cast<T>(2);
+  auto y_half = static_cast<T>(y) / static_cast<T>(2);
+  auto z_half = static_cast<T>(z) / static_cast<T>(2);
 
-  m_boundaries[WallIdx::LEFT] =   {-x_half, Component::Vector<float>(1, 0, 0),  Component::Vector<float>(-1, 1, 1)};
-  m_boundaries[WallIdx::RIGHT] =  {x_half,  Component::Vector<float>(-1, 0, 0), Component::Vector<float>(-1, 1, 1)};
-  m_boundaries[WallIdx::BOTTOM] = {-y_half, Component::Vector<float>(0, 1, 0),  Component::Vector<float>(1, -1, 1)};
-  m_boundaries[WallIdx::TOP] =    {y_half,  Component::Vector<float>(0, -1, 0), Component::Vector<float>(0, -1, 0)};
-  m_boundaries[WallIdx::BACK] =   {-z_half, Component::Vector<float>(0, 0, 1),  Component::Vector<float>(1, 1, -1)};
-  m_boundaries[WallIdx::FRONT] =  {z_half,  Component::Vector<float>(0, 0, -1), Component::Vector<float>(1, 1, -1)};
+  m_boundaries[WallIdx::LEFT]   = std::move(Component::Wall<T>({-x_half, Component::Vector<T>(1, 0, 0),  Component::Vector<T>(-1, 1, 1)}));
+  m_boundaries[WallIdx::RIGHT]  = std::move(Component::Wall<T>({x_half,  Component::Vector<T>(-1, 0, 0), Component::Vector<T>(-1, 1, 1)}));
+  m_boundaries[WallIdx::BOTTOM] = std::move(Component::Wall<T>({-y_half, Component::Vector<T>(0, 1, 0),  Component::Vector<T>(1, -1, 1)}));
+  m_boundaries[WallIdx::TOP]    = std::move(Component::Wall<T>({y_half,  Component::Vector<T>(0, -1, 0), Component::Vector<T>(1, -1, 1)}));
+  m_boundaries[WallIdx::BACK]   = std::move(Component::Wall<T>({-z_half, Component::Vector<T>(0, 0, 1),  Component::Vector<T>(1, 1, -1)}));
+  m_boundaries[WallIdx::FRONT]  = std::move(Component::Wall<T>({z_half,  Component::Vector<T>(0, 0, -1), Component::Vector<T>(1, 1, -1)}));
 }
 
-void SimulationContext::set_free_run(bool free_run) {
+template<typename T>
+void SimulationContext<T>::set_free_run(bool free_run) {
   m_free_run = free_run;
 }
 
-void SimulationContext::set_settings(const SimSettings& settings) {
+template<typename T>
+void SimulationContext<T>::set_settings(const SimSettings& settings) {
   m_settings = LatchingValue<SimSettings>(settings);
 }
 
-const SimSettings& SimulationContext::get_settings() const {
+template<typename T>
+const SimSettings& SimulationContext<T>::get_settings() const {
   return m_settings.get();
 }
 
-void SimulationContextThread(SimulationContext& sim, SimSettings settings) {
+template<typename T>
+void SimulationContextThread(SimulationContext<T>& sim, SimSettings settings) {
   if (settings.delay > 0) {
     auto start = chrono::steady_clock::now();
     chrono::duration<float> elapsed;
@@ -140,5 +150,11 @@ void SimulationContextThread(SimulationContext& sim, SimSettings settings) {
     sim.run();
   }
 }
+
+template class SimulationContext<float>;
+template class SimulationContext<double>;
+
+template void SimulationContextThread(SimulationContext<float>& sim, SimSettings settings);
+template void SimulationContextThread(SimulationContext<double>& sim, SimSettings settings);
 
 } // namespace Simulation

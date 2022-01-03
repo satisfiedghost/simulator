@@ -1,3 +1,5 @@
+#include "simulation.h"
+
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -5,8 +7,6 @@
 #include <iostream>
 #include <numeric>
 #include <thread>
-
-#include "simulation.h"
 
 class SimulationTest :
   public ::testing::Test {};
@@ -37,7 +37,8 @@ struct TestSettings {
   static constexpr size_t N_STEPS = 10000UL;
 }TestSettings;
 
-void sim_runner(Simulation::SimulationContext& sim, std::array<int64_t, TestSettings::N_STEPS>& cycle_times_us) {
+template<typename T>
+void sim_runner(Simulation::SimulationContext<T>& sim, std::array<int64_t, TestSettings::N_STEPS>& cycle_times_us) {
   sim.set_free_run(true);
   for (size_t i = 0; i < TestSettings::N_STEPS; i++) {
     auto start = chrono::steady_clock::now();
@@ -61,7 +62,7 @@ int64_t calculate_median(std::array<int64_t, TestSettings::N_STEPS> cycle_times_
 }
 
 TEST_F(SimulationTest, Performance) {
-  Simulation::SimulationContext sim;
+  Simulation::SimulationContext<float> sim;
 
   sim.set_boundaries(TestSettings.x_width, TestSettings.y_width, TestSettings.z_width);
 
@@ -105,7 +106,7 @@ TEST_F(SimulationTest, Performance) {
   std::array<int64_t, TestSettings::N_STEPS> cycle_times_us;
 
   auto start = chrono::steady_clock::now();
-  std::thread sim_thread(sim_runner, std::ref(sim), std::ref(cycle_times_us));
+  std::thread sim_thread(sim_runner<float>, std::ref(sim), std::ref(cycle_times_us));
   sim_thread.join();
   auto end = chrono::steady_clock::now();
   auto elapsed = chrono::duration_cast<chrono::microseconds>(end - start).count();

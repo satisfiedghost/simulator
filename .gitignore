@@ -7,3 +7,5 @@ tst/*
 !tst/CMakeLists.txt
 out.txt
 *.o
+callgrind*
+*.out
