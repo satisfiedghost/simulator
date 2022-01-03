@@ -16,10 +16,9 @@ FetchContent_MakeAvailable(googletest)
 find_package(OpenMP)
 if (OPENMP_FOUND)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -O2")
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
-
 
 enable_testing()
 
@@ -36,7 +35,6 @@ add_executable(
 add_executable(
   test_sim
   test_sim.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/simulation/simulation.o
 )
 
 target_include_directories(
@@ -56,28 +54,37 @@ target_include_directories(
   test_sim PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/component>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/simulation>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/phys>
 )
 
 target_link_directories(
   test_sim PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../obj/simulation/simulation.o>
 )
 
 target_link_libraries(
   test_particle
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/component/vector.o
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/component/particle.o
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/phys/phys.o
   gtest_main
 )
 
 target_link_libraries(
   test_vector
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/component/vector.o
   gtest_main
 )
 
 target_link_libraries(
   test_sim
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/simulation/simulation.o
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/component/vector.o
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/component/particle.o
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/phys/phys.o
   gtest_main
 )
 
 include(GoogleTest)
-gtest_discover_tests(test_vector test_sim)# test_particle)
+gtest_discover_tests(test_vector test_sim test_particle)
 

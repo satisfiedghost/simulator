@@ -27,5 +27,3 @@ template<typename T>
 Status bounce(Component::Particle<T>&, const Component::Wall<T>&);
 
 } // Physics
-
-#include "phys.tpp"

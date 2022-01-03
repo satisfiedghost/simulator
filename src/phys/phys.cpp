@@ -1,3 +1,5 @@
+#include "phys.h"
+
 namespace Physics {
 
 template<typename T>
@@ -7,7 +9,7 @@ Status collide(Component::Particle<T>& a, Component::Particle<T>& b) {
   const auto dist = a.get_position() - b.get_position();
 
   // nope too far away
-  if (dist.magnitude > static_cast<float>(a.get_radius() + b.get_radius())) {
+  if (dist.magnitude > static_cast<T>(a.get_radius() + b.get_radius())) {
     return Status::None;
   }
 
@@ -90,11 +92,17 @@ Status bounce(Component::Particle<T>& p, const Component::Wall<T>& wall) {
   // convert to a 1D position
   auto pos_relative = (p.get_position() * wall.normal().abs()).magnitude;
 
-  if (std::abs(pos_relative - wall.position()) <= static_cast<float>(p.get_radius())) {
+  if (std::abs(pos_relative - wall.position()) <= static_cast<T>(p.get_radius())) {
     p.set_velocity(p.get_velocity() * wall.inverse());
     return Status::Success;
   }
   return Status::None;
 }
+
+template Status bounce(Component::Particle<float>&, const Component::Wall<float>&);
+template Status collide(Component::Particle<float>&, Component::Particle<float>&);
+
+template Status bounce(Component::Particle<double>&, const Component::Wall<double>&);
+template Status collide(Component::Particle<double>&, Component::Particle<double>&);
 
 } // namespace Physics
