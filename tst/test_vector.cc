@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "vector.h"
+#include "component.h"
 #include <vector>
 
 std::vector<float> ones{1, -1};
@@ -10,8 +10,8 @@ class CombinationsTest :
 // Magnitude Calculation
 TEST_P(CombinationsTest, Magnitude) {
   Component::Vector<float> test1(std::get<0>(GetParam()),
-                                  std::get<1>(GetParam()),
-                                  std::get<2>(GetParam()));
+                                 std::get<1>(GetParam()),
+                                 std::get<2>(GetParam()));
   ASSERT_FLOAT_EQ(test1.magnitude, std::sqrt(3));
 }
 
