@@ -45,13 +45,13 @@ public:
            {}
 
   // Oh look at you, providing all the parameters
-  Particle(T xv, T yv, T zv,
-           T xp, T yp, T zp,
-           size_t radius, float mass)
+  Particle(size_t radius, float mass,
+           T xv, T yv, T zv,
+           T xp, T yp, T zp)
            : Particle(xv, yv, zv, xp, yp, zp) {
              m_radius = radius;
              m_mass = mass;
-             m_inverse_mass = powf(mass, -1);
+             m_inverse_mass = ::powf(mass, -1);
              m_kinetic_energy = calculate_kinetic_energy(m_mass, m_velocity);
            }
 

@@ -1,11 +1,13 @@
 #include <gtest/gtest.h>
-#include "particle.h"
+#include "component.h"
 #include "phys.h"
 #include <math.h>
 #include <array>
 #include "sim_settings.h"
 
 using namespace Simulation;
+using Component::Vector;
+using Component::Particle;
 
 class ParticleTest :
   public ::testing::Test {};
