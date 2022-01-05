@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <thread>
 
 namespace Simulation {
 
@@ -23,12 +24,11 @@ void SimulationContext<T>::add_particle(const Component::Vector<T>& v, const Com
 
 template<typename T>
 void SimulationContext<T>::add_particle_internal(Component::Particle<T>& p) {
-  size_t uid = m_working_particles.size() + 1;
-  p.uid.latch(uid);
+  p.uid.latch(m_particle_count + 1);
   // TODO we don't support adding particles at runtime (properly yet)
   // you can do it, it just might look weird
-  m_working_particles.push_back(p);
-  m_prepared_particles.push_back(p);
+  m_particle_count++;
+  m_particle_buffer.push_back(p);
 }
 
 template<typename T>
@@ -38,23 +38,24 @@ void SimulationContext<T>::run() {
 
   if (elapsed > SIM_RESOLUTION_US) {
     should_calc_next_step = true;
-    // copy the working buffer to the finalized buffer
-    m_prepared_particles = m_working_particles;
   }
 
   // If we're free running, just plow ahead
   if (!m_free_run && !should_calc_next_step) {
     return;
   }
-  should_calc_next_step = false;
 
+  // whistle and wait
+  std::shared_ptr<std::vector<Component::Particle<T>>> particles;
+  while (m_particle_buffer.get_writeable(particles) == Status::NotReady) {}
+
+  should_calc_next_step = false;
   m_tock = chrono::time_point_cast<US_T>(now);
 
   // run particles
-  for (auto& p : m_working_particles) {
+  for (auto& p : *particles) {
     p.step(SIM_RESOLUTION_US);
   }
-  m_step++;
 
   // now check for collisions
   // we only allow 1 collision per 2 partcles per frame so the
@@ -62,23 +63,27 @@ void SimulationContext<T>::run() {
 #ifdef PARALLELIZE_FOR_LOOPS
   #pragma omp parallel
 #endif
-  for (size_t j = 0; j < m_working_particles.size(); j++) {
-    for (size_t k = j + 1; k < m_working_particles.size(); k++) {
-      Status s = Physics::collide<T>(m_working_particles[j], m_working_particles[k]);
+  for (size_t j = 0; j < particles->size(); j++) {
+    for (size_t k = j + 1; k < particles->size(); k++) {
+      Status s = Physics::collide<T>((*particles)[j], (*particles)[k]);
       switch(s) {
         case Status::None:
+          break;
         case Status::Success:
+          m_collision_count++;
           break;
         case Status::Impossible:
         case Status::Inconsistent:
           m_impossible_count++;
-        break;
+          break;
+        default:
+          break;
       }
     }
   }
 
   // check if anyone has hit a wall
-  for (auto& p : m_working_particles) {
+  for (auto& p : *particles) {
     for (const auto& w : m_boundaries) {
       if (Physics::bounce<T>(p, w) == Status::Success) {
         break;
@@ -93,17 +98,16 @@ void SimulationContext<T>::run() {
   if (m_step - last_frame > TICKS_PER_SECOND) {
     last_frame = m_step;
     std::cout << "System After Run" << std::endl;
-    size_t i = 0;
-    for (auto& p : m_working_particles) {
-      std::cout << "Particle " << i << std::endl;
+    for (const auto& p : *particles) {
       std::cout << p << std::endl << std::endl;
       total_energy += p.get_kinetic_energy();
-      i++;
     }
     std::cout << "Total System KER: " << total_energy << std::endl;
     std::cout << "Impossible Situations: " << m_impossible_count << std::endl << std::endl;
   }
 #endif
+  m_particle_buffer.put();
+  m_step++;
 }
 
 // stand up for yourself
@@ -146,6 +150,14 @@ void SimulationContextThread(SimulationContext<T>& sim, SimSettings settings) {
       elapsed = now - start;
     } while (elapsed.count() < settings.delay);
   }
+
+  // startup the buffer-copy thread
+  std::thread th = std::thread(Util::ring_thread<std::vector<Component::Particle<T>>,
+                                                 Component::Particle<T>,
+                                                 SimSettings::RingBufferSize>,
+                                                 std::ref(sim.m_particle_buffer));
+  th.detach();
+
   while(true) {
     sim.run();
   }

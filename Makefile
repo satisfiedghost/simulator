@@ -2,7 +2,7 @@ SRC_DIR := src
 OBJ_DIR := obj
 BIN_DIR := bin
 
-CPPFLAGS := -Iinclude -MP -MMD -Wall -Wextra -Werror -Wconversion -fopenmp
+CPPFLAGS := -std=c++14 -Iinclude -MP -MMD -Wall -Wextra -Werror -Wconversion -fopenmp
 LDFLAGS := -lsfml-graphics -lsfml-window -lsfml-system -pthread -lboost_program_options -fopenmp
 
 # playing with some parallelization here... but performance is mixed
@@ -43,16 +43,17 @@ clena: clean
 clean:
 	@$(RM) -rv $(OBJ_DIR) $(BIN_DIR)
 	@$(RM) -rv ./*.o
-	@$(RM) -rv tst/CMakeCache.txt
-	@$(RM) -rv tst/CMakeFiles/
-	@$(RM) -rv tst/CTestTestfile.cmake
-	@$(RM) -rv tst/Makefile
-	@$(RM) -rv tst/_deps/
-	@$(RM) -rv tst/bin/
-	@$(RM) -rv tst/build/
-	@$(RM) -rv tst/cmake_install.cmake
-	@$(RM) -rv tst/lib/
-	@$(RM) -rv tst/*_include.cmake
+	echo "Removing CMake artifacts..."
+	@$(RM) -r tst/CMakeCache.txt
+	@$(RM) -r tst/CMakeFiles/
+	@$(RM) -r tst/CTestTestfile.cmake
+	@$(RM) -r tst/Makefile
+	@$(RM) -r tst/_deps/
+	@$(RM) -r tst/bin/
+	@$(RM) -r tst/build/
+	@$(RM) -r tst/cmake_install.cmake
+	@$(RM) -r tst/lib/
+	@$(RM) -r tst/*_include.cmake
 
 # Hacky, but they're tests...
 test: $(OBJ)

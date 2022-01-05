@@ -33,6 +33,9 @@ struct SimSettings {
   size_t z_width;               ///<< depth of system boundaries
   ScreenMode screen_mode;       ///<< open in full screen or whatever the system default is
   float overlap_detection;      ///<< if particles collide and their distance is < this * (R1 + R1) we assume they're overlapping
+  bool no_gui;                  ///<< set to run the simulator headless
+
+  static constexpr size_t RingBufferSize = 10;
 };
 
 // Copy this object to get some default settings.
@@ -55,7 +58,8 @@ const SimSettings DefaultSettings{
   /* .y_width */                1000,
   /* .z_width */                1000,
   /* .screen_mode */            ScreenMode::FULLSCREEN,
-  /* .overlap_detection */      0.95f
+  /* .overlap_detection */      0.95f,
+  /* .no_gui */                 false
 };
 
 } // namespace Simulation
