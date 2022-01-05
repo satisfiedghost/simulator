@@ -26,4 +26,8 @@ Status collide(Component::Particle<T>&, Component::Particle<T>&);
 template<typename T>
 Status bounce(Component::Particle<T>&, const Component::Wall<T>&);
 
+// Move a particle forward in time.
+template<typename T>
+void step (Component::Particle<T>&, US_T);
+
 } // Physics

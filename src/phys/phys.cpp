@@ -99,10 +99,21 @@ Status bounce(Component::Particle<T>& p, const Component::Wall<T>& wall) {
   return Status::None;
 }
 
+template<typename T>
+void step (Component::Particle<T>& p, US_T us) {
+  // move the amount we would expect, with our given velocity
+  T time_scalar = chrono::duration_cast<chrono::duration<T>>(us).count();
+  p.set_position(p.get_position() + (p.get_velocity() * time_scalar));
+}
+
+
 template Status bounce(Component::Particle<float>&, const Component::Wall<float>&);
 template Status collide(Component::Particle<float>&, Component::Particle<float>&);
 
 template Status bounce(Component::Particle<double>&, const Component::Wall<double>&);
 template Status collide(Component::Particle<double>&, Component::Particle<double>&);
+
+template void step (Component::Particle<float>& p, US_T us);
+template void step (Component::Particle<double>& p, US_T us);
 
 } // namespace Physics

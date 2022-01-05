@@ -4,16 +4,13 @@
 namespace Component {
 
 template<typename T>
-void Particle<T>::step(US_T us) {
-  // move the amount we would expect, with our given velocity
-  T time_scalar = chrono::duration_cast<chrono::duration<T>>(us).count();
-
-  m_position = m_position + (m_velocity * time_scalar);
+void Particle<T>::set_velocity(const Vector<T>& v) {
+  m_velocity = v;
 }
 
 template<typename T>
-void Particle<T>::set_velocity(const Vector<T>& v) {
-  m_velocity = v;
+void Particle<T>::set_position(const Vector<T>& p) {
+  m_velocity = p;
 }
 
 template class Particle<float>;

@@ -1,5 +1,5 @@
 #pragma once
-#include "latch.h"
+#include "util/latch.h"
 #include "sim_settings.h"
 #include "sim_time.h"
 #include "util/status.h"
@@ -93,10 +93,6 @@ public:
     this->uid = other.uid;
   }
 
-  // moves the particle a total of some time
-  // or supply a value to run the simulation forward or backward
-  void step(US_T us);
-
   // get a copy of this particle's position vector
   const Vector<T>& get_position() const { return m_position; };
 
@@ -113,6 +109,7 @@ public:
 
   void set_velocity(const Vector<T>& v);
 
+  void set_position(const Vector<T>& p);
   // UID for this particle
   // 0 is an invalid UID
   LatchingValue<size_t> uid;
