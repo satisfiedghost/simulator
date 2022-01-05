@@ -54,7 +54,7 @@ void SimulationContext<T>::run() {
 
   // run particles
   for (auto& p : *particles) {
-    p.step(SIM_RESOLUTION_US);
+    Physics::step(p, SIM_RESOLUTION_US);
   }
 
   // now check for collisions
