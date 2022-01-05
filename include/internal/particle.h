@@ -2,7 +2,7 @@
 #include "latch.h"
 #include "sim_settings.h"
 #include "sim_time.h"
-#include "status.h"
+#include "util/status.h"
 #include "vector.h"
 
 #include <cmath>

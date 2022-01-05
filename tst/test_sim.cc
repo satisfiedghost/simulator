@@ -1,4 +1,6 @@
+#define private public  // they're just words do whatever you want
 #include "simulation.h"
+#define private private
 
 #include <algorithm>
 #include <array>
@@ -39,6 +41,15 @@ struct TestSettings {
 
 template<typename T>
 void sim_runner(Simulation::SimulationContext<T>& sim, std::array<int64_t, TestSettings::N_STEPS>& cycle_times_us) {
+
+  // simulation blocks forever if this isn't running...
+
+  std::thread th = std::thread(Util::ring_thread<std::vector<Component::Particle<T>>,
+                                                 Component::Particle<T>,
+                                                 Simulation::SimSettings::RingBufferSize>,
+                                                 std::ref(sim.m_particle_buffer));
+  th.detach();
+
   sim.set_free_run(true);
   for (size_t i = 0; i < TestSettings::N_STEPS; i++) {
     auto start = chrono::steady_clock::now();

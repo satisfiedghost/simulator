@@ -4,7 +4,7 @@
 
 namespace Cli {
 
-bool parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::SimSettings& settings) {
+Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::SimSettings& settings) {
   po::options_description desc("Allowed options");
   desc.add_options()
       ("help", "Display this help message.")
@@ -49,7 +49,11 @@ bool parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::Si
         "Delay before we start running the simulation, in seconds.")
       ("no-full-screen",
         po::bool_switch()->default_value(false),
-        "Disable default fullscreen.");
+        "Disable default fullscreen.")
+      ("no-gui",
+        po::bool_switch(&settings.no_gui)->default_value(Simulation::DefaultSettings.no_gui),
+        "Diable the GUI. Boring for users, great for debug.")
+      ;
 
   // I normally detest exceptions, but this library throws one reasonably, no point guessing what
   // the user might've meant if the arguments aren't correct
@@ -59,7 +63,7 @@ bool parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::Si
 
     if (vm.count("help")) {
         std::cout << desc << std::endl;
-        return true;
+        return Status::None;
     }
 
     if (!vm["no-full-screen"].defaulted()) {
@@ -73,20 +77,20 @@ bool parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::Si
     if (vm.count("vmax") && vm.count("vmin")) {
       if (vm["vmax"].as<int>() < vm["vmin"].as<int>()) {
         std::cout << "See --help, Must have vmax > vmin." << std::endl;
-        return false;
+        return Status::Failure;
       }
     }
 
     if (vm.count("mass-max") && vm.count("mass-min")) {
       if (vm["mass-max"].as<float>() < vm["mass-min"].as<float>()) {
         std::cout << "See --help, Must have mass-max > mass-min." << std::endl;
-        return false;
+        return Status::Failure;
       }
     }
 
     if (!vm["vmin"].defaulted() && vm["vmax"].defaulted() && !vm.count("vall")) {
       std::cout << "See --help, --vmin specified, without --vmax" << std::endl;
-      return false;
+      return Status::Failure;
     }
 
     if (vm.count("vall")) {
@@ -110,17 +114,17 @@ bool parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::Si
     if (vm.count("color")) {
       settings.color = vm["color"].as<std::vector<int>>();
       if (!validate_rgb(settings.color)) {
-        return false;
+        return Status::Failure;
       }
     }
 
     if (vm.count("color-range") && !vm.count("color")) {
       std::cout << "See --help, color-range requires color" << std::endl;
-      return false;
+      return Status::Failure;
     } else if (vm.count("color-range")) {
       settings.color_range = vm["color-range"].as<std::vector<int>>();
       if (!validate_rgb(settings.color_range)) {
-        return false;
+        return Status::Failure;
       }
     }
 
@@ -130,9 +134,9 @@ bool parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::Si
   } catch (const std::exception& e) {
     std::cout << e.what() << std::endl;
     std::cout << desc << std::endl;
-    return false;
+    return Status::Failure;
   }
-  return true;
+  return Status::Success;
 }
 
 } // namespace Cli

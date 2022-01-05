@@ -2,8 +2,10 @@
 #include "component.h"
 #include "sim_settings.h"
 #include "sim_time.h"
+#include "util/ring_buffer.h"
 
 #include <array>
+#include <memory>
 #include <tuple>
 #include <vector>
 
@@ -11,6 +13,7 @@ namespace Simulation {
 /**
  * The simulation class manages time and holds references to all objects within the context
  */
+
 template<typename T>
 class SimulationContext {
 public:
@@ -22,8 +25,7 @@ public:
 
   // Or do it later.
   SimulationContext()
-                   : m_working_particles()
-                   , m_prepared_particles()
+                   : m_particle_buffer()
                    , m_sim_clock()
                    , start(chrono::time_point_cast<US_T>(m_sim_clock.now()))
                    , m_tock(start)
@@ -46,7 +48,9 @@ public:
   void run();
 
   // read-only view of particles
-  const std::vector<Component::Particle<T>>& get_particles() const {return m_prepared_particles;};
+  const std::vector<Component::Particle<T>>& get_particles() const {
+    return m_particle_buffer.latest();
+  }
 
   // create a simulation box, centered about the origin, with dimensions {x, y, z}
   // only support this as a whole number now (it's generally the size of the screen)
@@ -62,15 +66,14 @@ public:
   // View the settings this simulation is using
   const SimSettings& get_settings() const;
 
+  template<typename S>
+  friend void SimulationContextThread(SimulationContext<S>& sim, SimSettings settings);
+
 private:
   void add_particle_internal(Component::Particle<T>&);
 
-  // the working particles are those actively being used to calculate the next state, and
-  // have no guaratneed state
-  std::vector<Component::Particle<T>> m_working_particles;
-
-  // this is the copy clients recerive, which is always guaranteed to be in a valid state
-  std::vector<Component::Particle<T>> m_prepared_particles;
+  // keeping a ringbuffer of particles allows us to go back N steps in time, with minimal overhead
+  Util::ThreadedRingBuffer<std::vector<Component::Particle<T>>, Component::Particle<T>, SimSettings::RingBufferSize> m_particle_buffer;
 
   chrono::steady_clock m_sim_clock;
   const chrono::time_point<chrono::steady_clock, US_T> start;
@@ -96,8 +99,14 @@ private:
   // Number of times the simulator has detectd an impossible situation
   size_t m_impossible_count = 0;
 
+  // Number of collisions experienced by system.
+  size_t m_collision_count = 0;
+
   // Whether we should calculate the next step in the simulation
   bool should_calc_next_step;
+
+  // Total particles in system
+  size_t m_particle_count = 0;
 
   // Invariant settings for the system (well as long as you don't call update settings at runtime, which might be fun)
   LatchingValue<SimSettings> m_settings;

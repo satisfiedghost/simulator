@@ -7,20 +7,30 @@ int main(int argc, char** argv) {
   Simulation::SimSettings settings = Simulation::DefaultSettings;
 
   po::variables_map vm;
-  if (!Cli::parse_cli_args(argc, argv, vm, settings)) {
-    // bye!
-    std::cout << "Failed to parse arguments, terminating." << std::endl;
-    return 1;
-  } else if (vm.count("help")) {
-    return 0;
+  Status s = Cli::parse_cli_args(argc, argv, vm, settings);
+
+  switch(s) {
+    case Status::None:
+      return 0;
+    case Status::Failure:
+      std::cout << "Failed to parse arguments, terminating." << std::endl;
+      return 1;
+    default:
+      break;
   }
 
   set_initial_conditions(sim, settings);
+  std::thread window_thread;
 
-  std::thread window_thread(Graphics::SimulationWindowThread<float>, std::ref(sim), settings);
+  if (!settings.no_gui) {
+    window_thread = std::thread(Graphics::SimulationWindowThread<float>, std::ref(sim), settings);
+  }
+
   std::thread sim_thread(Simulation::SimulationContextThread<float>, std::ref(sim), settings);
 
-  window_thread.join();
+  if (!settings.no_gui) {
+    window_thread.join();
+  }
   sim_thread.join();
 
   std::cout << "Goodbye!" << std::endl;

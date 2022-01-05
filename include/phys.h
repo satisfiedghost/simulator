@@ -1,6 +1,6 @@
 #pragma once
 #include "component.h"
-#include "status.h"
+#include "util/status.h"
 
 #include <cmath>
 

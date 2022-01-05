@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <time.h>
+#include <vector>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
@@ -54,8 +55,10 @@ void SimulationWindowThread(const Simulation::SimulationContext<T>& sim, Simulat
     break;
   }
 
+  // block on the simulation having run at least 1 loop or we're just going to draw garbage
+  auto& sim_particles = sim.get_particles();
 
-  for (const auto& p : sim.get_particles()) {
+  for (const auto& p : sim_particles) {
     sf::CircleShape tshape(p.get_radius());
     draw_particles.push_back({tshape,
                               (desktop_mode.width / 2) - static_cast<float>(p.get_radius()),
@@ -105,6 +108,7 @@ void SimulationWindowThread(const Simulation::SimulationContext<T>& sim, Simulat
   while (window->isOpen())
   {
       const auto& sim_particles = sim.get_particles();
+
       sf::Time now = clock.getElapsedTime();
       // check all the window's events that were triggered since the last iteration of the loop
       sf::Event event;
