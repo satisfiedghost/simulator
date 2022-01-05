@@ -1,4 +1,3 @@
-// Prevent users of particle.h from including these libs
 #include "component.h"
 
 namespace Component {
@@ -10,7 +9,7 @@ void Particle<T>::set_velocity(const Vector<T>& v) {
 
 template<typename T>
 void Particle<T>::set_position(const Vector<T>& p) {
-  m_velocity = p;
+  m_position = p;
 }
 
 template class Particle<float>;
