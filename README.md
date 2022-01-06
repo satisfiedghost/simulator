@@ -2,6 +2,8 @@
 
 A physics engine. Written from scratch with minimal research to see what I come up with.
 
+![demo](./demo.gif)
+
 # Setup
 
 You will need the following:
