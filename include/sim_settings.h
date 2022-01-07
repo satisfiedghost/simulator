@@ -1,6 +1,7 @@
 #pragma once
 #include "util/latch.h"
 
+#include <algorithm>
 #include <vector>
 
 namespace Simulation {
@@ -34,6 +35,8 @@ struct SimSettings {
   ScreenMode screen_mode;       ///<< open in full screen or whatever the system default is
   float overlap_detection;      ///<< if particles collide and their distance is < this * (R1 + R1) we assume they're overlapping
   bool no_gui;                  ///<< set to run the simulator headless
+  std::vector<size_t> trace;    ///<< elide debug information not related to these particles
+  bool extra_trace;             ///<< print out state of everyone else in the trace, when any traced event occurs
 
   static constexpr size_t RingBufferSize = 10;
 };
@@ -59,7 +62,14 @@ const SimSettings DefaultSettings{
   /* .z_width */                1000,
   /* .screen_mode */            ScreenMode::FULLSCREEN,
   /* .overlap_detection */      0.95f,
-  /* .no_gui */                 false
+  /* .no_gui */                 false,
+  /* .trace */                  std::vector<size_t>(),
+  /* .extra_trace */            false
 };
+
+inline bool trace_present(const std::vector<size_t>& v, size_t puid) {
+  // if no trace was specified, print all. otherwise, check if this is a relevant particle
+  return v.size() == 0 or std::find(v.begin(), v.end(), puid) != v.end();
+}
 
 } // namespace Simulation

@@ -1,5 +1,6 @@
 #pragma once
 #include "component.h"
+#include "context.h"
 #include "sim_settings.h"
 #include "sim_time.h"
 #include "util/ring_buffer.h"
@@ -27,8 +28,8 @@ public:
   SimulationContext()
                    : m_particle_buffer()
                    , m_sim_clock()
-                   , start(chrono::time_point_cast<US_T>(m_sim_clock.now()))
-                   , m_tock(start)
+                   , m_start(chrono::time_point_cast<US_T>(m_sim_clock.now()))
+                   , m_tock(m_start)
                    , m_free_run(false)
                    , should_calc_next_step(true)
                    , m_settings(DefaultSettings)
@@ -36,6 +37,9 @@ public:
 
   // get the time of the simulation
   chrono::time_point<chrono::steady_clock> get_simulation_time() const;
+
+  // get the elapsed time of the system
+  chrono::microseconds get_elapsed_time_us() const;
 
   // add a particle into the simulation
   // makes a copy of the particle
@@ -69,6 +73,13 @@ public:
   template<typename S>
   friend void SimulationContextThread(SimulationContext<S>& sim, SimSettings settings);
 
+  void set_physics_context(Simulation::PhysicsContext<T> pc) {
+    m_physics_context = pc;
+    m_physics_context.set_sim(this);
+  }
+
+  size_t get_step() { return m_step; }
+
 private:
   void add_particle_internal(Component::Particle<T>&);
 
@@ -76,22 +87,11 @@ private:
   Util::ThreadedRingBuffer<std::vector<Component::Particle<T>>, Component::Particle<T>, SimSettings::RingBufferSize> m_particle_buffer;
 
   chrono::steady_clock m_sim_clock;
-  const chrono::time_point<chrono::steady_clock, US_T> start;
+  const chrono::time_point<chrono::steady_clock, US_T> m_start;
   chrono::time_point<chrono::steady_clock, US_T> m_tock;
   bool m_free_run;
 
-  // convenient way to remember which wall is which
-  enum WallIdx {
-    LEFT = 0,
-    BACK = 1,
-    RIGHT = 2,
-    FRONT = 3,
-    TOP = 4,
-    BOTTOM = 5,
-    SIZE = 6,
-  };
-
-  std::array<Component::Wall<T>, WallIdx::SIZE> m_boundaries;
+  std::array<Component::Wall<T>, Component::WallIdx::SIZE> m_boundaries;
 
   // Number of steps the simulator has run
   size_t m_step = 0;
@@ -102,6 +102,9 @@ private:
   // Number of collisions experienced by system.
   size_t m_collision_count = 0;
 
+  // Number of bounces experienced by system.
+  size_t m_bounce_count = 0;
+
   // Whether we should calculate the next step in the simulation
   bool should_calc_next_step;
 
@@ -109,7 +112,10 @@ private:
   size_t m_particle_count = 0;
 
   // Invariant settings for the system (well as long as you don't call update settings at runtime, which might be fun)
-  LatchingValue<SimSettings> m_settings;
+  Util::LatchingValue<SimSettings> m_settings;
+
+  // Physics rules for the simulation
+  Simulation::PhysicsContext<T> m_physics_context;
 };
 
 // run me!

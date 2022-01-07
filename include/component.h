@@ -2,6 +2,6 @@
 
 // Simulation Components.
 // Do not include these directly!
-#include "internal/wall.h"
-#include "internal/particle.h"
-#include "internal/vector.h"
+#include "component/wall.h"
+#include "component/particle.h"
+#include "component/vector.h"

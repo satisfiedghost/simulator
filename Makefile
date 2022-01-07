@@ -3,7 +3,7 @@ OBJ_DIR := obj
 BIN_DIR := bin
 
 CPPFLAGS := -std=c++14 -Iinclude -MP -MMD -Wall -Wextra -Werror -Wconversion -fopenmp
-LDFLAGS := -lsfml-graphics -lsfml-window -lsfml-system -pthread -lboost_program_options -fopenmp
+LDFLAGS := -lsfml-graphics -lsfml-window -lsfml-system -pthread -lboost_program_options
 
 # playing with some parallelization here... but performance is mixed
 parallel: CPPFLAGS += -O2 -fopenmp -DPARALLELIZE_FOR_LOOPS
@@ -76,7 +76,7 @@ $(OBJ_DIR)/%.debug.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	$(CXX) $(CPPFLAGS) -c $< -o $@
 
 $(OBJ_DIR):
-	mkdir -p $@ $@/component $@/simulation $@/graphics $@/cli $@/phys $@/graphics
+	mkdir -p $@ $@/component $@/simulation $@/graphics $@/cli $@/physics $@/graphics
 
 $(BIN_DIR):
 	mkdir -p $@

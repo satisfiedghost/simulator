@@ -1,5 +1,5 @@
 #include "component.h"
-#include "phys.h"
+#include "context.h"
 #include "sim_settings.h"
 
 #include <array>
@@ -17,6 +17,8 @@ constexpr size_t PARTICLE_RADIUS = 20;
 
 // test our assumptions about Particle Collisions
 TEST_F(ParticleTest, Collisions2D) {
+  Simulation::PhysicsContext<float> phys;
+
   constexpr size_t N_ANGLES = 360;
   constexpr float DISTANCE = 2.f * static_cast<float>(PARTICLE_RADIUS) - 0.05f; // a reasonable trigger for the simulation
 
@@ -86,7 +88,7 @@ TEST_F(ParticleTest, Collisions2D) {
             auto energy_b_before = std::pow(b.get_velocity().magnitude, 2);
             auto total_energy_before = energy_a_before + energy_b_before;
 
-            Physics::collide(a, b);
+            phys.collide(a, b);
             auto energy_a_after = std::pow(a.get_velocity().magnitude, 2);
             auto energy_b_after = std::pow(b.get_velocity().magnitude, 2);
             auto total_energy_after = energy_a_after + energy_b_after;

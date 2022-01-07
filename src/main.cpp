@@ -20,6 +20,10 @@ int main(int argc, char** argv) {
   }
 
   set_initial_conditions(sim, settings);
+  Simulation::PhysicsContext<float> physics_context(settings);
+
+  sim.set_physics_context(physics_context);
+
   std::thread window_thread;
 
   if (!settings.no_gui) {

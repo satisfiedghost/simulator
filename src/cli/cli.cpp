@@ -53,6 +53,12 @@ Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::
       ("no-gui",
         po::bool_switch(&settings.no_gui)->default_value(Simulation::DefaultSettings.no_gui),
         "Diable the GUI. Boring for users, great for debug.")
+      ("trace",
+        po::value<std::vector<size_t>>()->multitoken(),
+        "Highlight these paricles and remove unrelated debug output.")
+      ("extra-trace",
+        po::bool_switch(&settings.extra_trace)->default_value(Simulation::DefaultSettings.extra_trace),
+        "Print out full sim state after each iteration. This will be slow.")
       ;
 
   // I normally detest exceptions, but this library throws one reasonably, no point guessing what
@@ -130,6 +136,10 @@ Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::
 
     if (vm.count("color-range")) {
       settings.color_range = vm["color-range"].as<std::vector<int>>();
+    }
+
+    if (vm.count("trace")) {
+      settings.trace = vm["trace"].as<std::vector<size_t>>();
     }
   } catch (const std::exception& e) {
     std::cout << e.what() << std::endl;
