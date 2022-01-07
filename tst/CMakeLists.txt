@@ -41,7 +41,7 @@ target_include_directories(
   test_particle PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/component>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/phys>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/physics>
 )
 
 target_include_directories(
@@ -55,7 +55,7 @@ target_include_directories(
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/component>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/simulation>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/phys>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/physics>
 )
 
 target_link_directories(
@@ -66,7 +66,7 @@ target_link_libraries(
   test_particle
   ${CMAKE_CURRENT_SOURCE_DIR}/../obj/component/vector.o
   ${CMAKE_CURRENT_SOURCE_DIR}/../obj/component/particle.o
-  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/phys/phys.o
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/physics/physics.o
   gtest_main
 )
 
@@ -81,7 +81,7 @@ target_link_libraries(
   ${CMAKE_CURRENT_SOURCE_DIR}/../obj/simulation/simulation.o
   ${CMAKE_CURRENT_SOURCE_DIR}/../obj/component/vector.o
   ${CMAKE_CURRENT_SOURCE_DIR}/../obj/component/particle.o
-  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/phys/phys.o
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/physics/physics.o
   gtest_main
 )
 

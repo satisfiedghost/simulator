@@ -1,5 +1,4 @@
-#include "phys.h"
-#include "simulation.h"
+#include "context.h"
 
 #include <algorithm>
 #include <limits>
@@ -10,6 +9,12 @@ namespace Simulation {
 template<typename T>
 chrono::time_point<chrono::steady_clock> SimulationContext<T>::get_simulation_time() const {
   return m_sim_clock.now();
+}
+
+template<typename T>
+chrono::microseconds SimulationContext<T>::get_elapsed_time_us() const {
+  auto now = get_simulation_time();
+  return chrono::duration_cast<chrono::microseconds>(now - m_start);
 }
 
 template<typename T>
@@ -54,7 +59,7 @@ void SimulationContext<T>::run() {
 
   // run particles
   for (auto& p : *particles) {
-    Physics::step(p, SIM_RESOLUTION_US);
+    m_physics_context.step(p, SIM_RESOLUTION_US);
   }
 
   // now check for collisions
@@ -65,7 +70,7 @@ void SimulationContext<T>::run() {
 #endif
   for (size_t j = 0; j < particles->size(); j++) {
     for (size_t k = j + 1; k < particles->size(); k++) {
-      Status s = Physics::collide<T>((*particles)[j], (*particles)[k]);
+      Status s = m_physics_context.collide((*particles)[j], (*particles)[k]);
       switch(s) {
         case Status::None:
           break;
@@ -85,8 +90,9 @@ void SimulationContext<T>::run() {
   // check if anyone has hit a wall
   for (auto& p : *particles) {
     for (const auto& w : m_boundaries) {
-      if (Physics::bounce<T>(p, w) == Status::Success) {
-        break;
+      // we allow multiple bounces per frame in case e.g. a particle goes into a corner
+      if (m_physics_context.bounce(p, w) == Status::Success) {
+        m_bounce_count++;
       }
     }
   }
@@ -95,15 +101,26 @@ void SimulationContext<T>::run() {
   // print every second
   T total_energy = 0;
   static size_t last_frame = 0;
-  if (m_step - last_frame > TICKS_PER_SECOND) {
+  if (m_step - last_frame > TICKS_PER_SECOND or m_settings.get().extra_trace) {
     last_frame = m_step;
-    std::cout << "System After Run" << std::endl;
+    std::cout << "***************System Report (Post Run)***************" << std::endl;
+    std::cout << "******************************************************" << std::endl;
+    std::cout << "On Step: " << m_step << std::endl;
+    auto elapsed_time = get_elapsed_time_us().count();
+    std::cout << "Elapsed Time: " << elapsed_time << "us " << "| ("
+      << static_cast<float>(elapsed_time) / static_cast<float>(1e6) << "s)" << std::endl;
     for (const auto& p : *particles) {
-      std::cout << p << std::endl << std::endl;
-      total_energy += p.get_kinetic_energy();
+      if (Simulation::trace_present(m_settings.get().trace, p.uid.get())) {
+        std::cout << p << std::endl << std::endl;
+        total_energy += p.get_kinetic_energy();
+      }
     }
     std::cout << "Total System KER: " << total_energy << std::endl;
-    std::cout << "Impossible Situations: " << m_impossible_count << std::endl << std::endl;
+    std::cout << "Impossible Situations: " << m_impossible_count << std::endl;
+    std::cout << "Collisions : " << m_collision_count << std::endl;
+    std::cout << "Bounces: " << m_bounce_count << std::endl;
+    std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
+    std::cout << "$$$$$$$$$$$$$$$End System Report (Post Run)$$$$$$$$$$$$$$$" << std::endl << std::endl;
   }
 #endif
   m_particle_buffer.put();
@@ -117,12 +134,36 @@ void SimulationContext<T>::set_boundaries(size_t x, size_t y, size_t z) {
   auto y_half = static_cast<T>(y) / static_cast<T>(2);
   auto z_half = static_cast<T>(z) / static_cast<T>(2);
 
-  m_boundaries[WallIdx::LEFT]   = std::move(Component::Wall<T>({-x_half, Component::Vector<T>(1, 0, 0),  Component::Vector<T>(-1, 1, 1)}));
-  m_boundaries[WallIdx::RIGHT]  = std::move(Component::Wall<T>({x_half,  Component::Vector<T>(-1, 0, 0), Component::Vector<T>(-1, 1, 1)}));
-  m_boundaries[WallIdx::BOTTOM] = std::move(Component::Wall<T>({-y_half, Component::Vector<T>(0, 1, 0),  Component::Vector<T>(1, -1, 1)}));
-  m_boundaries[WallIdx::TOP]    = std::move(Component::Wall<T>({y_half,  Component::Vector<T>(0, -1, 0), Component::Vector<T>(1, -1, 1)}));
-  m_boundaries[WallIdx::BACK]   = std::move(Component::Wall<T>({-z_half, Component::Vector<T>(0, 0, 1),  Component::Vector<T>(1, 1, -1)}));
-  m_boundaries[WallIdx::FRONT]  = std::move(Component::Wall<T>({z_half,  Component::Vector<T>(0, 0, -1), Component::Vector<T>(1, 1, -1)}));
+  m_boundaries[Component::WallIdx::LEFT]   = std::move(Component::Wall<T>({-x_half,
+                                                       Component::Vector<T>(1, 0, 0),
+                                                       Component::Vector<T>(-1, 1, 1),
+                                                       Component::WallIdx::LEFT}));
+
+  m_boundaries[Component::WallIdx::RIGHT]  = std::move(Component::Wall<T>({x_half,
+                                                       Component::Vector<T>(-1, 0, 0),
+                                                       Component::Vector<T>(-1, 1, 1),
+                                                       Component::WallIdx::RIGHT}));
+
+  m_boundaries[Component::WallIdx::BOTTOM] = std::move(Component::Wall<T>({-y_half,
+                                                       Component::Vector<T>(0, 1, 0),
+                                                       Component::Vector<T>(1, -1, 1),
+                                                       Component::WallIdx::BOTTOM}));
+
+  m_boundaries[Component::WallIdx::TOP]    = std::move(Component::Wall<T>({y_half,
+                                                       Component::Vector<T>(0, -1, 0),
+                                                       Component::Vector<T>(1, -1, 1),
+                                                       Component::WallIdx::TOP}));
+
+  m_boundaries[Component::WallIdx::BACK]   = std::move(Component::Wall<T>({-z_half,
+                                                       Component::Vector<T>(0, 0, 1),
+                                                       Component::Vector<T>(1, 1, -1),
+                                                       Component::WallIdx::BACK}));
+
+  m_boundaries[Component::WallIdx::FRONT]  = std::move(Component::Wall<T>({z_half,
+                                                       Component::Vector<T>(0, 0, -1),
+                                                       Component::Vector<T>(1, 1, -1),
+                                                       Component::WallIdx::FRONT}));
+
 }
 
 template<typename T>
@@ -132,7 +173,7 @@ void SimulationContext<T>::set_free_run(bool free_run) {
 
 template<typename T>
 void SimulationContext<T>::set_settings(const SimSettings& settings) {
-  m_settings = LatchingValue<SimSettings>(settings);
+  m_settings = Util::LatchingValue<SimSettings>(settings);
 }
 
 template<typename T>
@@ -142,6 +183,12 @@ const SimSettings& SimulationContext<T>::get_settings() const {
 
 template<typename T>
 void SimulationContextThread(SimulationContext<T>& sim, SimSettings settings) {
+  sim.set_settings(settings);
+
+  if (settings.display_mode) {
+    while(true) {}
+  }
+
   if (settings.delay > 0) {
     auto start = chrono::steady_clock::now();
     chrono::duration<float> elapsed;
@@ -152,11 +199,12 @@ void SimulationContextThread(SimulationContext<T>& sim, SimSettings settings) {
   }
 
   // startup the buffer-copy thread
-  std::thread th = std::thread(Util::ring_thread<std::vector<Component::Particle<T>>,
-                                                 Component::Particle<T>,
-                                                 SimSettings::RingBufferSize>,
-                                                 std::ref(sim.m_particle_buffer));
-  th.detach();
+  std::thread ring_buffer_copy_thread =
+        std::thread(Util::ring_thread<std::vector<Component::Particle<T>>,
+                                      Component::Particle<T>,
+                                      SimSettings::RingBufferSize>,
+                                      std::ref(sim.m_particle_buffer));
+  ring_buffer_copy_thread.detach();
 
   while(true) {
     sim.run();

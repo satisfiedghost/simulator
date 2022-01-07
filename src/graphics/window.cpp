@@ -3,6 +3,7 @@
 
 #include <SFML/Graphics.hpp>
 
+#include <algorithm>
 #include <memory>
 #include <time.h>
 #include <vector>
@@ -65,7 +66,15 @@ void SimulationWindowThread(const Simulation::SimulationContext<T>& sim, Simulat
                               (desktop_mode.height / 2) - static_cast<float>(p.get_radius())});
   }
 
-  if (!user_color) {
+  if (settings.trace.size() > 0) {
+    for (size_t i = 0; i < draw_particles.size(); i++) {
+      if (std::find(settings.trace.begin(), settings.trace.end(), i + 1) != settings.trace.end()) {
+        static_cast<sf::CircleShape&>(draw_particles[i]).setFillColor(sf::Color::Red);
+      } else {
+        static_cast<sf::CircleShape&>(draw_particles[i]).setFillColor(sf::Color::White);
+      }
+    }
+  } else if (!user_color) {
     srand (time(NULL));
     for (sf::CircleShape& p : draw_particles) {
       int rgb[3] = {rand() % 256, rand() % 256, rand() % 256};

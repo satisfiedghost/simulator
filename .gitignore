@@ -5,7 +5,7 @@ bin/*
 tst/*
 !tst/*.cc
 !tst/CMakeLists.txt
-out.txt
+*.txt
 *.o
 callgrind*
 *.out

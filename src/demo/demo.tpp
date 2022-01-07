@@ -1,5 +1,5 @@
 #include "component.h"
-#include "simulation.h"
+#include "context.h"
 #include "window.h"
 
 #include <chrono>
@@ -43,7 +43,7 @@ void set_initial_conditions(Simulation::SimulationContext<T>& sim, Simulation::S
   std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
   std::uniform_real_distribution<float> vel_dist(0, static_cast<float>(settings.vmax));
   std::uniform_real_distribution<float> mass_dist(settings.mass_min, settings.mass_min);
-  std::uniform_int_distribution<int> radius_dist(settings.radius_min, settings.radius_max + 1);
+  std::uniform_int_distribution<int> radius_dist(settings.radius_min, settings.radius_max);
   std::uniform_real_distribution<float> rad_dist(0, 2 * M_PI);
 
   std::vector<Component::Particle<T>> particles;

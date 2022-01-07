@@ -1,5 +1,6 @@
 #pragma once
 
+namespace Util {
 // Since C++ has no concept of a runtime constant, implement our own.
 template<typename T>
 class LatchingValue {
@@ -33,3 +34,5 @@ private:
   T m_value;
   bool is_latched;
 };
+
+} // Util
