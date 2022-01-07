@@ -16,7 +16,14 @@ class PhysicsContext {
 public:
   PhysicsContext() : m_settings(Simulation::DefaultSettings) {}
 
-  PhysicsContext(Simulation::SimSettings settings) : m_settings(settings) {}
+  PhysicsContext(Simulation::SimSettings settings)
+                   : m_settings(settings)
+                   , m_gravity(Component::Vector<T>(
+                                m_settings.get().gravity * std::cos(static_cast<T>(M_PI) * m_settings.get().gravity_angle / 180.f),
+                                m_settings.get().gravity * std::sin(static_cast<T>(M_PI) * m_settings.get().gravity_angle / 180.f),
+                                0))
+                  {}
+
   // Collide one particle into another
   // Status::None if no collision occurred (too far away)
   // Status::Success if a collision occurred
@@ -38,11 +45,15 @@ public:
     m_outer_sim = sim;
   }
 
+  // accelerate a particle in the direction of gravity
+  void gravity(Component::Particle<T>&);
+
   // Move a particle forward in time.
-  void step (Component::Particle<T>&, US_T);
+  void step(Component::Particle<T>&, US_T);
 private:
   Util::LatchingValue<Simulation::SimSettings> m_settings;
 
+  Util::LatchingValue<Component::Vector<T>> m_gravity;
   // access to the simulation in which we're running
   // TODO manage ths properly, should be read-only
   Simulation::SimulationContext<T>* m_outer_sim;

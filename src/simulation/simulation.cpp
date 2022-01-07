@@ -57,6 +57,11 @@ void SimulationContext<T>::run() {
   should_calc_next_step = false;
   m_tock = chrono::time_point_cast<US_T>(now);
 
+  // Gravity rides everything
+  for (auto& p : *particles) {
+    m_physics_context.gravity(p);
+  }
+
   // run particles
   for (auto& p : *particles) {
     m_physics_context.step(p, SIM_RESOLUTION_US);

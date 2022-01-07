@@ -133,6 +133,11 @@ Status PhysicsContext<T>::bounce(Component::Particle<T>& p, const Component::Wal
 }
 
 template<typename T>
+void PhysicsContext<T>::gravity(Component::Particle<T>& p) {
+  p.set_velocity(p.get_velocity() + m_gravity.get());
+}
+
+template<typename T>
 void PhysicsContext<T>::step(Component::Particle<T>& p, US_T us) {
   // move the amount we would expect, with our given velocity
   T time_scalar = chrono::duration_cast<chrono::duration<T>>(us).count();
