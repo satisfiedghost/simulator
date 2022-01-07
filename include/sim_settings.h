@@ -37,6 +37,8 @@ struct SimSettings {
   bool no_gui;                  ///<< set to run the simulator headless
   std::vector<size_t> trace;    ///<< elide debug information not related to these particles
   bool extra_trace;             ///<< print out state of everyone else in the trace, when any traced event occurs
+  float gravity;                ///<< I don't think you understand the gravity of the situation
+  float gravity_angle;          ///<< I don't think you understand the gravity of the situation
 
   static constexpr size_t RingBufferSize = 10;
 };
@@ -64,7 +66,9 @@ const SimSettings DefaultSettings{
   /* .overlap_detection */      0.95f,
   /* .no_gui */                 false,
   /* .trace */                  std::vector<size_t>(),
-  /* .extra_trace */            false
+  /* .extra_trace */            false,
+  /* .gravity */                0,
+  /* .gravity_angle */          270
 };
 
 inline bool trace_present(const std::vector<size_t>& v, size_t puid) {

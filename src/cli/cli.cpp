@@ -59,6 +59,12 @@ Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::
       ("extra-trace",
         po::bool_switch(&settings.extra_trace)->default_value(Simulation::DefaultSettings.extra_trace),
         "Print out full sim state after each iteration. This will be slow.")
+      ("gravity",
+        po::value<float>(&settings.gravity)->default_value(Simulation::DefaultSettings.gravity),
+        "Add gravity to the simulation.")
+      ("gravity-angle",
+        po::value<float>(&settings.gravity_angle)->default_value(Simulation::DefaultSettings.gravity_angle),
+        "Commit crimes against nature.")
       ;
 
   // I normally detest exceptions, but this library throws one reasonably, no point guessing what
