@@ -42,14 +42,16 @@ Status PhysicsContext<T>::collide_internal(Component::Particle<T>& a, Component:
   DEBUG_MSG(COLLISION_DETECTED);
 
   // now that we have our impulse vector accounted for, we can calculate post-collision velocities
-  // once again, this does not account for mass weighting yet
   a.set_velocity(a.get_velocity() + impulse_vector / a.get_mass());
   b.set_velocity(b.get_velocity() - impulse_vector / b.get_mass());
 
-  // If a particular particle is moving too fast or lines up just right...
-  // It can go through another particle before their collisions are detected.
-  // This should be mitigated eventually, but for now detect it and bail out, restoring original velocities.
-  // This results in a large gain in kinetic energy (is there a better way to detect this?)
+  // KE is not always conserved in our system.
+  // This is likely due to a number of factors I haven't run down yet including
+  //   * Insufficient resolution in the system
+  //   * Losses in precision due to intermediate values of floats
+  //   * Inability to represent irraitonal numbers fully
+  // The correction algorithm is able to correct roughly half of erroneous collisions in
+  // the random case, but otherwise we simply bail and restore the original velocities.
   const auto ka_after = a.get_kinetic_energy();
   const auto kb_after = b.get_kinetic_energy();
   const auto k_delta = std::abs((ka_before + kb_before) - (ka_after + kb_after));
