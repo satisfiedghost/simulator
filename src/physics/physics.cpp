@@ -1,9 +1,18 @@
 #include "context.h"
+#include "debug.h"
+
+#include <array>
+#include <tuple>
 
 namespace Simulation {
 
 template<typename T>
 Status PhysicsContext<T>::collide(Component::Particle<T>& a, Component::Particle<T>& b) {
+  return collide_internal(a, b, true);
+}
+
+template<typename T>
+Status PhysicsContext<T>::collide_internal(Component::Particle<T>& a, Component::Particle<T>& b, bool retry) {
   // are these particles even close enough for this?
   // define a vector from the other object's COM to ours
   const auto dist = a.get_position() - b.get_position();
@@ -30,25 +39,7 @@ Status PhysicsContext<T>::collide(Component::Particle<T>& a, Component::Particle
   const auto dot_product_abs = std::abs(impulse_unit_vector ^ v_delta_before);
   const auto impulse_vector = 2 * impulse_unit_vector * (dot_product_abs / (a.get_inverse_mass() + b.get_inverse_mass()));
 
-// TODO use actual debug logging....
-#ifdef DEBUG
-  if (Simulation::trace_present(m_settings.get().trace, a.uid.get()) or
-      Simulation::trace_present(m_settings.get().trace, b.uid.get())) {
-    std::cout << "*******************Collision detected!*******************" << std::endl;
-    std::cout << "*********************************************************" << std::endl;
-    std::cout << "On Step: " << m_outer_sim->get_step() << std::endl;
-    auto elapsed_time = m_outer_sim->get_elapsed_time_us().count();
-    std::cout << "Elapsed Time: " << elapsed_time << "us " << "| ("
-      << static_cast<float>(elapsed_time) / static_cast<float>(1e6) << "s)" << std::endl;
-    std::cout << "Distance: " << dist << std::endl;
-    std::cout << "V Delta: " << v_delta_before << std::endl;
-    std::cout << "Particle A (Pre): " << std::endl << a << std::endl;
-    std::cout << "Particle B (Pre): " << std::endl << b << std::endl;
-    std::cout << "Total KE (Pre): " << ka_before + kb_before << std::endl << std::endl;
-    std::cout << "Impulse unit vector: " << impulse_unit_vector << std::endl;
-    std::cout << "Impulse vector: " << impulse_vector << std::endl;
-  }
-#endif
+  DEBUG_MSG(COLLISION_DETECTED);
 
   // now that we have our impulse vector accounted for, we can calculate post-collision velocities
   // once again, this does not account for mass weighting yet
@@ -63,37 +54,106 @@ Status PhysicsContext<T>::collide(Component::Particle<T>& a, Component::Particle
   const auto kb_after = b.get_kinetic_energy();
   const auto k_delta = std::abs((ka_before + kb_before) - (ka_after + kb_after));
 
-  if (k_delta > 1) {
-    // nope
-#ifdef DEBUG
-  if (Simulation::trace_present(m_settings.get().trace, a.uid.get()) or
-      Simulation::trace_present(m_settings.get().trace, b.uid.get())) {
-    std::cout << "!!!!!!!!!!!!!!!!!!Detected impossible collision!!!!!!!!!!!!!!!!!!!" << std::endl;
-    std::cout << "Particle A (Would Have Been): " << std::endl << a << std::endl;
-    std::cout << "Particle B (Would Have Been): " << std::endl << a << std::endl;
-    std::cout << "Delta KE: " << k_delta << std::endl;
-    std::cout << "Total KE (Would Have Been): " << ka_after + kb_after << std::endl;
-    std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-    std::cout << "$$$$$$$$$$$$$$$$$$End Collision Data$$$$$$$$$$$$$$$$$$" << std::endl << std::endl;
+  // energy must be conserved
+  if (k_delta != 0) {
+    if (retry) {
+      DEBUG_MSG(IMPOSSIBLE_COLLISION_WARNING);
+
+      in_replay_mode = true;
+      Status s = correct_collision(a, b);
+      in_replay_mode = false;
+
+      // We weren't able to correct these particles... restore their original state
+      // and allow them to clip without a collision.
+      if (s != Status::Corrected) {
+        a.set_velocity(va_before);
+        b.set_velocity(vb_before);
+
+        DEBUG_MSG(UNABLE_TO_CORRECT_COLLISION);
+        DEBUG_MSG(POST_COLLISION_REPORT);
+        return Status::Inconsistent;
+      }
+      DEBUG_MSG(POST_COLLISION_REPORT);
+
+      return Status::Corrected;
+    }
+    DEBUG_MSG(IMPOSSIBLE_COLLISION_WARNING);
+    DEBUG_MSG(POST_COLLISION_REPORT);
+
+    return Status::Inconsistent;
   }
-#endif
-    a.set_velocity(va_before);
-    b.set_velocity(va_before);
-    return Status::Impossible;
-  }
-#ifdef DEBUG
-  if (Simulation::trace_present(m_settings.get().trace, a.uid.get()) or
-      Simulation::trace_present(m_settings.get().trace, b.uid.get())) {
-  std::cout << "Particle A (Post): " << std::endl << a << std::endl;
-  std::cout << "Particle B (Post): " << std::endl << b << std::endl;
-  std::cout << "Delta KE: " << k_delta << std::endl;
-  std::cout << "Total KE (Post): " << ka_after + kb_after << std::endl;
-  std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-  std::cout << "$$$$$$$$$$$$$$$$$$End Collision Data$$$$$$$$$$$$$$$$$$" << std::endl << std::endl;
-  }
-#endif
+
+  DEBUG_MSG(POST_COLLISION_REPORT);
+
   // that's it!
   return Status::Success;
+}
+
+template<typename T>
+Status PhysicsContext<T>::correct_collision(Component::Particle<T>& a, Component::Particle<T>& b) {
+  // two particles, gone astray. let's see if we can put them on the right course with some mandatory re-education
+  const auto& last_state = m_outer_sim->get_particles();
+
+  // get the problem particles in their good days
+  const auto& a_old = last_state[a.uid.get() - 1];
+  const auto& b_old = last_state[b.uid.get() - 1];
+
+  DEBUG_MSG(COLLISION_CORRECTION_REPORT);
+
+  // This gets a lot more expensive to fix as we go to finer resolutions
+  // We'll try half-speed, then quarter-speed, then tenth-speed, then hundreth speed
+  std::array<std::tuple<chrono::microseconds, uint8_t>, 4> scales = {
+    std::make_tuple(chrono::microseconds(SIM_RESOLUTION_US.count() / 2), 2),
+    std::make_tuple(chrono::microseconds(SIM_RESOLUTION_US.count() / 4), 4),
+    std::make_tuple(chrono::microseconds(SIM_RESOLUTION_US.count() / 10), 10),
+    std::make_tuple(chrono::microseconds(SIM_RESOLUTION_US.count() / 100), 1000)
+  };
+
+  size_t attempt = 0;
+  for (auto scale : scales) {
+    attempt++;
+    auto a_working = a_old;
+    auto b_working = b_old;
+
+    DEBUG_MSG(CORRECTION_ATTEMPT_REPORT);
+
+    // we know a collision will occur at some point soon...
+    size_t steps = 0;
+    Status s;
+    do {
+      // replay everything that these particles had happen, at the higher resolution
+      gravity(a_working, std::get<0>(scale));
+      gravity(b_working, std::get<0>(scale));
+
+      step(a_working, std::get<0>(scale));
+      step(b_working, std::get<0>(scale));
+
+      s = collide_internal(a_working, b_working, false);
+
+      for (const auto& wall : m_outer_sim->get_boundaries()) {
+        bounce(a_working, wall);
+        bounce(b_working, wall);
+      }
+
+      steps++;
+      // Going more steps than our time division factor would actually put us ahead of the current frame.
+      // If these particles keep going they may never necessarily collide again.
+    } while(s == Status::None and steps < std::get<1>(scale));
+
+    if (s == Status::Inconsistent) {
+      // we failed to correct. try a higher resolution or give up
+      DEBUG_MSG(CORRECTION_ATTEMPT_FAILED);
+      continue;
+    } else if (s == Status::Success) {
+      // we did it! correct the particles and let the caller know
+      a = a_working;
+      b = b_working;
+
+      DEBUG_MSG(CORRECTION_ATTEMPT_SUCCESS);
+      return Status::Corrected;
+    }
+  }
+  return Status::Failure;
 }
 
 template<typename T>
@@ -113,34 +173,25 @@ Status PhysicsContext<T>::bounce(Component::Particle<T>& p, const Component::Wal
 
   if (distance <= static_cast<T>(p.get_radius())) {
     p.set_velocity(p.get_velocity() * wall.inverse());
-#ifdef DEBUG
-  if (Simulation::trace_present(m_settings.get().trace, p.uid.get())) {
-    std::cout << "*******************Bounce detected!*******************" << std::endl;
-    std::cout << "******************************************************" << std::endl;
-    std::cout << "On Step: " << m_outer_sim->get_step() << std::endl;
-    auto elapsed_time = m_outer_sim->get_elapsed_time_us().count();
-    std::cout << "Elapsed Time: " << elapsed_time << "us " << "| ("
-      << static_cast<float>(elapsed_time) / static_cast<float>(1e6) << "s)" << std::endl;
-    std::cout << "Wall: " << wall << std::endl;
-    std::cout << "Particle (Post):" << std::endl << p << std::endl;
-    std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-    std::cout << "$$$$$$$$$$$$$$$$$$End Bounce Data$$$$$$$$$$$$$$$$$$" << std::endl << std::endl;
-  }
-#endif
+
+    DEBUG_MSG(BOUNCE_DETECTION);
+
     return Status::Success;
   }
   return Status::None;
 }
 
 template<typename T>
-void PhysicsContext<T>::gravity(Component::Particle<T>& p) {
-  p.set_velocity(p.get_velocity() + m_gravity.get());
+void PhysicsContext<T>::gravity(Component::Particle<T>& p, US_T us) {
+  T time_scalar = chrono::duration_cast<chrono::duration<T>>(us).count();
+  p.set_velocity(p.get_velocity() + (m_gravity.get() * time_scalar));
 }
 
 template<typename T>
 void PhysicsContext<T>::step(Component::Particle<T>& p, US_T us) {
   // move the amount we would expect, with our given velocity
   T time_scalar = chrono::duration_cast<chrono::duration<T>>(us).count();
+  //std::cout << "scalar: " << time_scalar << std::endl;
   p.set_position(p.get_position() + (p.get_velocity() * time_scalar));
 }
 

@@ -1,4 +1,6 @@
 #include "context.h"
+#include "debug.h"
+#include "info.h"
 
 #include <algorithm>
 #include <limits>
@@ -59,7 +61,7 @@ void SimulationContext<T>::run() {
 
   // Gravity rides everything
   for (auto& p : *particles) {
-    m_physics_context.gravity(p);
+    m_physics_context.gravity(p, SIM_RESOLUTION_US);
   }
 
   // run particles
@@ -79,15 +81,19 @@ void SimulationContext<T>::run() {
       switch(s) {
         case Status::None:
           break;
+        case Status::Inconsistent:
+          m_inconsistent_count++;
+          m_collision_count++;
+        break;
+        case Status::Corrected:
+          m_correction_count++;
+          m_collision_count++;
+        break;
         case Status::Success:
           m_collision_count++;
-          break;
-        case Status::Impossible:
-        case Status::Inconsistent:
-          m_impossible_count++;
-          break;
+        break;
         default:
-          break;
+        break;
       }
     }
   }
@@ -102,32 +108,9 @@ void SimulationContext<T>::run() {
     }
   }
 
-#ifdef DEBUG
-  // print every second
-  T total_energy = 0;
-  static size_t last_frame = 0;
-  if (m_step - last_frame > TICKS_PER_SECOND or m_settings.get().extra_trace) {
-    last_frame = m_step;
-    std::cout << "***************System Report (Post Run)***************" << std::endl;
-    std::cout << "******************************************************" << std::endl;
-    std::cout << "On Step: " << m_step << std::endl;
-    auto elapsed_time = get_elapsed_time_us().count();
-    std::cout << "Elapsed Time: " << elapsed_time << "us " << "| ("
-      << static_cast<float>(elapsed_time) / static_cast<float>(1e6) << "s)" << std::endl;
-    for (const auto& p : *particles) {
-      if (Simulation::trace_present(m_settings.get().trace, p.uid.get())) {
-        std::cout << p << std::endl << std::endl;
-        total_energy += p.get_kinetic_energy();
-      }
-    }
-    std::cout << "Total System KER: " << total_energy << std::endl;
-    std::cout << "Impossible Situations: " << m_impossible_count << std::endl;
-    std::cout << "Collisions : " << m_collision_count << std::endl;
-    std::cout << "Bounces: " << m_bounce_count << std::endl;
-    std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-    std::cout << "$$$$$$$$$$$$$$$End System Report (Post Run)$$$$$$$$$$$$$$$" << std::endl << std::endl;
-  }
-#endif
+  INFO_MSG(SYSTEM_STATUS);
+  DEBUG_MSG(SYSTEM_REPORT);
+
   m_particle_buffer.put();
   m_step++;
 }
@@ -210,6 +193,9 @@ void SimulationContextThread(SimulationContext<T>& sim, SimSettings settings) {
                                       SimSettings::RingBufferSize>,
                                       std::ref(sim.m_particle_buffer));
   ring_buffer_copy_thread.detach();
+
+  // make 2 copies of the simulation at the start.. allows for corrections if an error occurs on the first frame
+  sim.m_particle_buffer.put();
 
   while(true) {
     sim.run();

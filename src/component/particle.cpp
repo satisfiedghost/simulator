@@ -5,6 +5,7 @@ namespace Component {
 template<typename T>
 void Particle<T>::set_velocity(const Vector<T>& v) {
   m_velocity = v;
+  m_kinetic_energy = calculate_kinetic_energy(m_mass, v);
 }
 
 template<typename T>
