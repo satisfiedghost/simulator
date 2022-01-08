@@ -79,22 +79,24 @@ public:
     return Status::Success;
   }
 
-  size_t size() { return T; }
+  size_t size() const { return T; }
 
-  size_t get_idx() { return m_current_idx; }
+  size_t get_idx() const { return m_current_idx; }
 
   template<typename Cc, typename Ec, size_t Tc>
   friend void ring_thread(ThreadedRingBuffer<Cc, Ec, Tc>&);
 
+  template<typename Cc, typename Ec, size_t Tc>
+  friend std::ostream& operator<<(std::ostream&, const ThreadedRingBuffer<Cc, Ec, Tc>&);
+
 private:
-  size_t get_next_idx() {
+  size_t get_next_idx() const {
     return (m_current_idx + 1) % T;
   }
 
-  size_t get_last_idx() {
-    return (m_current_idx == 0) ? T : m_current_idx - 1;
+  size_t get_last_idx() const {
+    return (m_current_idx == 0) ? T - 1 : m_current_idx - 1;
   }
-
 
   size_t m_current_idx;
   std::array<C, T> m_items;
@@ -106,7 +108,8 @@ private:
 template<typename C, typename E, size_t T>
 std::ostream& operator<<(std::ostream& os, const ThreadedRingBuffer<C, E, T>& buffer) {
   os << "RingBuffer @ " << &buffer << std::endl;
-  std::cout << "Size: " << buffer.size() << " Current Idx: " << buffer.get_idx();
+  os << "Size: " << buffer.size() << " Current Idx: " << buffer.get_idx() << std::endl;
+  os << "Next Idx: " << buffer.get_next_idx() << " Last Idx: " << buffer.get_last_idx();
   return os;
 }
 

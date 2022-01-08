@@ -44,12 +44,14 @@ void sim_runner(Simulation::SimulationContext<T>& sim, std::array<int64_t, TestS
 
   // simulation blocks forever if this isn't running...
 
+  Simulation::PhysicsContext<T> phys;
   std::thread th = std::thread(Util::ring_thread<std::vector<Component::Particle<T>>,
                                                  Component::Particle<T>,
                                                  Simulation::SimSettings::RingBufferSize>,
                                                  std::ref(sim.m_particle_buffer));
   th.detach();
 
+  sim.set_physics_context(phys);
   sim.set_free_run(true);
   for (size_t i = 0; i < TestSettings::N_STEPS; i++) {
     auto start = chrono::steady_clock::now();

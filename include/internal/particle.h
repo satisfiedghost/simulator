@@ -12,7 +12,7 @@ bool operator==(const Particle<T>& first, const Particle<T>& second) {
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const Particle<T>& p) {
   os << "{{UID: " << p.uid.get()  << ", Radius: " << p.get_radius() << std::endl;
-  os << "  Mass: " << p.m_mass << " KE: " << p.m_kinetic_energy << std::endl;
+  os << "  Mass: " << p.m_mass << " | KE: " << p.m_kinetic_energy << std::endl;
   os << "  Vel : " << p.m_velocity << std::endl;
   os << "  Pos : " << p.m_position << "}}";
   return os;
