@@ -38,7 +38,7 @@ public:
   // get the time of the simulation
   chrono::time_point<chrono::steady_clock> get_simulation_time() const;
 
-  // get the elapsed time of the system
+  // get the elapsed time of the system (real e.g. wall clock)
   chrono::microseconds get_elapsed_time_us() const;
 
   // add a particle into the simulation
@@ -51,7 +51,7 @@ public:
   // run the simulation, please call repeatedly in a dedicated thread
   void run();
 
-  // read-only view of particles
+  // read-only view of particles, in their last good state
   const std::vector<Component::Particle<T>>& get_particles() const {
     return m_particle_buffer.latest();
   }
@@ -59,6 +59,10 @@ public:
   // create a simulation box, centered about the origin, with dimensions {x, y, z}
   // only support this as a whole number now (it's generally the size of the screen)
   void set_boundaries(size_t, size_t, size_t);
+
+  const std::array<Component::Wall<T>, Component::WallIdx::SIZE>& get_boundaries() const {
+    return m_boundaries;
+  }
 
   // If true, run let the system free run
   // If false, run in steps of the time resolution
@@ -96,8 +100,11 @@ private:
   // Number of steps the simulator has run
   size_t m_step = 0;
 
-  // Number of times the simulator has detectd an impossible situation
-  size_t m_impossible_count = 0;
+  // Number of times the simulator detectd an impossible situation, and was able to mitigate it.
+  size_t m_correction_count = 0;
+
+  // Number of times the simulator detectd an impossible situation, and was not able to correct it.
+  size_t m_inconsistent_count = 0;
 
   // Number of collisions experienced by system.
   size_t m_collision_count = 0;

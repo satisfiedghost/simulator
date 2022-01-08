@@ -39,6 +39,7 @@ struct SimSettings {
   bool extra_trace;             ///<< print out state of everyone else in the trace, when any traced event occurs
   float gravity;                ///<< I don't think you understand the gravity of the situation
   float gravity_angle;          ///<< I don't think you understand the gravity of the situation
+  bool info;                    ///<< Print out INFO level messages.
 
   static constexpr size_t RingBufferSize = 10;
 };
@@ -68,7 +69,8 @@ const SimSettings DefaultSettings{
   /* .trace */                  std::vector<size_t>(),
   /* .extra_trace */            false,
   /* .gravity */                0,
-  /* .gravity_angle */          270
+  /* .gravity_angle */          270,
+  /* .info */                   false
 };
 
 inline bool trace_present(const std::vector<size_t>& v, size_t puid) {

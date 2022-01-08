@@ -3,7 +3,7 @@
 #include "window.h"
 
 int main(int argc, char** argv) {
-  Simulation::SimulationContext<float> sim;
+  Simulation::SimulationContext<double> sim;
   Simulation::SimSettings settings = Simulation::DefaultSettings;
 
   po::variables_map vm;
@@ -20,17 +20,17 @@ int main(int argc, char** argv) {
   }
 
   set_initial_conditions(sim, settings);
-  Simulation::PhysicsContext<float> physics_context(settings);
+  Simulation::PhysicsContext<double> physics_context(settings);
 
   sim.set_physics_context(physics_context);
 
   std::thread window_thread;
 
   if (!settings.no_gui) {
-    window_thread = std::thread(Graphics::SimulationWindowThread<float>, std::ref(sim), settings);
+    window_thread = std::thread(Graphics::SimulationWindowThread<double>, std::ref(sim), settings);
   }
 
-  std::thread sim_thread(Simulation::SimulationContextThread<float>, std::ref(sim), settings);
+  std::thread sim_thread(Simulation::SimulationContextThread<double>, std::ref(sim), settings);
 
   if (!settings.no_gui) {
     window_thread.join();

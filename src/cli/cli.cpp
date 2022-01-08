@@ -65,6 +65,9 @@ Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::
       ("gravity-angle",
         po::value<float>(&settings.gravity_angle)->default_value(Simulation::DefaultSettings.gravity_angle),
         "Commit crimes against nature.")
+      ("info",
+        po::bool_switch(&settings.info)->default_value(Simulation::DefaultSettings.info),
+        "Print out INFO level messages. System stats, etc.")
       ;
 
   // I normally detest exceptions, but this library throws one reasonably, no point guessing what

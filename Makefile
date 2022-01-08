@@ -11,7 +11,7 @@ parallel: LDFLAGS += -fopenmp
 all: CPPFLAGS += -O2
 sim: CPPFLAGS += -O2
 test: CPPFLAGS += -O2
-debug: CPPFLAGS += -DDEBUG -Og -g
+debug: CPPFLAGS += -DDEBUG -Og -g -fno-access-control
 
 .PHONY: all clean clena debug
 
