@@ -199,5 +199,6 @@ void PhysicsContext<T>::step(Component::Particle<T>& p, US_T us) {
 
 template class PhysicsContext<float>;
 template class PhysicsContext<double>;
+template class PhysicsContext<int64_t>;
 
 } // namespace Physics

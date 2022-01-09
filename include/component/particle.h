@@ -19,14 +19,14 @@ T calculate_kinetic_energy(T mass, Component::Vector<T> velocity) {
   return static_cast<T>(0.5) * mass * std::pow(velocity.magnitude, 2.f);
 }
 
-// Point particle
-template<typename T>
+// Sphere particle
+// Templated on underlying representation.
+template<typename V>
 class Particle {
-
-static_assert(!std::is_integral<T>::value, "Integral types are not yet supported.");
+typedef typename V::vector_t v_t;
 public:
   // Create with a params
-  Particle(size_t radius, T mass)
+  Particle(v_t radius, v_t mass)
            : Particle() {
              m_radius = radius;
              m_mass = mass;
@@ -38,14 +38,14 @@ public:
   Particle()
            : m_velocity(0, 0, 0)
            , m_position(0, 0, 0)
-           , m_radius(Simulation::DefaultSettings.radius_min)
-           , m_mass(Simulation::DefaultSettings.mass_min)
-           , m_inverse_mass(std::pow(Simulation::DefaultSettings.mass_min, static_cast<T>(-1.f)))
+           , m_radius(Simulation::DefaultSettings<T>.radius_min)
+           , m_mass(Simulation::DefaultSettings<T>.mass_min)
+           , m_inverse_mass(std::pow(Simulation::DefaultSettings<T>.mass_min, static_cast<T>(-1.f)))
            , m_kinetic_energy(calculate_kinetic_energy(m_mass, m_velocity))
            {}
 
   // Oh look at you, providing all the parameters
-  Particle(size_t radius, float mass,
+  Particle(T radius, float mass,
            T xv, T yv, T zv,
            T xp, T yp, T zp)
            : Particle(xv, yv, zv, xp, yp, zp) {
@@ -59,14 +59,14 @@ public:
            T xp, T yp, T zp)
            : m_velocity(xv, yv, zv)
            , m_position(xp, yp, zp)
-           , m_radius(Simulation::DefaultSettings.radius_min)
-           , m_mass(Simulation::DefaultSettings.mass_min)
-           , m_inverse_mass(std::pow(Simulation::DefaultSettings.mass_min, static_cast<T>(-1.f)))
+           , m_radius(Simulation::DefaultSettings<T>.radius_min)
+           , m_mass(Simulation::DefaultSettings<T>.mass_min)
+           , m_inverse_mass(std::pow(Simulation::DefaultSettings<T>.mass_min, static_cast<T>(-1.f)))
            , m_kinetic_energy(calculate_kinetic_energy(m_mass, m_velocity))
            {}
 
   // Create a particle with vectors
-  Particle(size_t radius, T mass, const Vector<T>& v, const Vector<T> &p)
+  Particle(T radius, T mass, const Vector<T>& v, const Vector<T> &p)
            : Particle(v, p) {
              m_radius = radius;
              m_mass = mass;
@@ -77,9 +77,9 @@ public:
   Particle(const Vector<T>& v, const Vector<T> &p)
            : m_velocity(v)
            , m_position(p)
-           , m_radius(Simulation::DefaultSettings.radius_min)
-           , m_mass(Simulation::DefaultSettings.mass_min)
-           , m_inverse_mass(std::pow(Simulation::DefaultSettings.mass_min, static_cast<T>(-1.f)))
+           , m_radius(Simulation::DefaultSettings<T>.radius_min)
+           , m_mass(Simulation::DefaultSettings<T>.mass_min)
+           , m_inverse_mass(std::pow(Simulation::DefaultSettings<T>.mass_min, static_cast<T>(-1.f)))
            , m_kinetic_energy(calculate_kinetic_energy(m_mass, m_velocity))
            {}
 
@@ -99,7 +99,7 @@ public:
   // get a copy of this particle's velocity vector
   const Vector<T>& get_velocity() const { return m_velocity; };
 
-  size_t get_radius() const { return m_radius; };
+  T get_radius() const { return m_radius; };
 
   T get_mass() const { return m_mass; }
 
@@ -123,7 +123,7 @@ private:
   // 3d position
   Vector<T> m_position;
   // radius
-  size_t m_radius;
+  T m_radius;
   //mass
   T m_mass;
   // inverse mass, precalculate this for later use

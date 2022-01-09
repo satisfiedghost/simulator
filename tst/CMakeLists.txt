@@ -23,6 +23,11 @@ endif()
 enable_testing()
 
 add_executable(
+  test_fixed
+  test_fixed.cc
+)
+
+add_executable(
   test_vector
   test_vector.cc
 )
@@ -35,6 +40,11 @@ add_executable(
 add_executable(
   test_sim
   test_sim.cc
+)
+
+target_include_directories(
+  test_fixed PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
 )
 
 target_include_directories(
@@ -57,9 +67,14 @@ target_include_directories(
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/simulation>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/physics>
 )
-
 target_link_directories(
+
   test_sim PUBLIC
+)
+
+target_link_libraries(
+  test_fixed
+  gtest_main
 )
 
 target_link_libraries(
@@ -86,5 +101,5 @@ target_link_libraries(
 )
 
 include(GoogleTest)
-gtest_discover_tests(test_vector test_sim test_particle)
+gtest_discover_tests(test_vector test_sim test_particle test_fixed)
 

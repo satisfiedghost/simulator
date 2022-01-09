@@ -3,8 +3,8 @@
 #include "window.h"
 
 int main(int argc, char** argv) {
-  Simulation::SimulationContext<double> sim;
-  Simulation::SimSettings settings = Simulation::DefaultSettings;
+  Simulation::SimulationContext<int64_t> sim;
+  Simulation::SimSettings<int64_t> settings = Simulation::DefaultSettings<int64_t>;
 
   po::variables_map vm;
   Status s = Cli::parse_cli_args(argc, argv, vm, settings);
@@ -20,17 +20,17 @@ int main(int argc, char** argv) {
   }
 
   set_initial_conditions(sim, settings);
-  Simulation::PhysicsContext<double> physics_context(settings);
+  Simulation::PhysicsContext<int64_t> physics_context(settings);
 
   sim.set_physics_context(physics_context);
 
   std::thread window_thread;
 
   if (!settings.no_gui) {
-    window_thread = std::thread(Graphics::SimulationWindowThread<double>, std::ref(sim), settings);
+    window_thread = std::thread(Graphics::SimulationWindowThread<int64_t>, std::ref(sim), settings);
   }
 
-  std::thread sim_thread(Simulation::SimulationContextThread<double>, std::ref(sim), settings);
+  std::thread sim_thread(Simulation::SimulationContextThread<int64_t>, std::ref(sim), settings);
 
   if (!settings.no_gui) {
     window_thread.join();

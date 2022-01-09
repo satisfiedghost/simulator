@@ -14,9 +14,9 @@ namespace Simulation {
 template <typename T>
 class PhysicsContext {
 public:
-  PhysicsContext() : m_settings(Simulation::DefaultSettings) {}
+  PhysicsContext() : m_settings(Simulation::DefaultSettings<T>) {}
 
-  PhysicsContext(Simulation::SimSettings settings)
+  PhysicsContext(Simulation::SimSettings<T> settings)
                    : m_settings(settings)
                    , m_gravity(Component::Vector<T>(
                                 m_settings.get().gravity * std::cos(static_cast<T>(M_PI) * m_settings.get().gravity_angle / 180.f),
@@ -59,7 +59,7 @@ private:
   // allows 1 level of recursion
   Status collide_internal(Component::Particle<T>&, Component::Particle<T>&, bool);
 
-  Util::LatchingValue<Simulation::SimSettings> m_settings;
+  Util::LatchingValue<Simulation::SimSettings<T>> m_settings;
 
   Util::LatchingValue<Component::Vector<T>> m_gravity;
   // access to the simulation in which we're running

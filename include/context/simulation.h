@@ -19,7 +19,7 @@ template<typename T>
 class SimulationContext {
 public:
   // Construct a simulation with settings
-  SimulationContext(SimSettings settings)
+  SimulationContext(SimSettings<T> settings)
                     : SimulationContext() {
                       m_settings = settings;
                     }
@@ -32,7 +32,7 @@ public:
                    , m_tock(m_start)
                    , m_free_run(false)
                    , should_calc_next_step(true)
-                   , m_settings(DefaultSettings)
+                   , m_settings(DefaultSettings<T>)
                    {}
 
   // get the time of the simulation
@@ -69,13 +69,13 @@ public:
   void set_free_run(bool);
 
   // Set the settings
-  void set_settings(const SimSettings&);
+  void set_settings(const SimSettings<T>&);
 
   // View the settings this simulation is using
-  const SimSettings& get_settings() const;
+  const SimSettings<T>& get_settings() const;
 
   template<typename S>
-  friend void SimulationContextThread(SimulationContext<S>& sim, SimSettings settings);
+  friend void SimulationContextThread(SimulationContext<S>& sim, SimSettings<T> settings);
 
   void set_physics_context(Simulation::PhysicsContext<T> pc) {
     m_physics_context = pc;
@@ -88,7 +88,7 @@ private:
   void add_particle_internal(Component::Particle<T>&);
 
   // keeping a ringbuffer of particles allows us to go back N steps in time, with minimal overhead
-  Util::ThreadedRingBuffer<std::vector<Component::Particle<T>>, Component::Particle<T>, SimSettings::RingBufferSize> m_particle_buffer;
+  Util::ThreadedRingBuffer<std::vector<Component::Particle<T>>, Component::Particle<T>, SimSettings<T>::RingBufferSize> m_particle_buffer;
 
   chrono::steady_clock m_sim_clock;
   const chrono::time_point<chrono::steady_clock, US_T> m_start;
@@ -119,7 +119,7 @@ private:
   size_t m_particle_count = 0;
 
   // Invariant settings for the system (well as long as you don't call update settings at runtime, which might be fun)
-  Util::LatchingValue<SimSettings> m_settings;
+  Util::LatchingValue<SimSettings<T>> m_settings;
 
   // Physics rules for the simulation
   Simulation::PhysicsContext<T> m_physics_context;
@@ -129,6 +129,6 @@ private:
 // run me!
 // come on, run me!
 template<typename T>
-void SimulationContextThread(SimulationContext<T>& sim, SimSettings settings);
+void SimulationContextThread(SimulationContext<T>& sim, SimSettings<T> settings);
 
 } // Simulation

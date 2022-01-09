@@ -20,7 +20,7 @@ template<typename T>
 static void correct_overlap(std::vector<Component::Particle<T>>& particles, std::mt19937& gen);
 
 template<typename T>
-void set_initial_conditions(Simulation::SimulationContext<T>& sim, Simulation::SimSettings settings) {
+void set_initial_conditions(Simulation::SimulationContext<T>& sim, Simulation::SimSettings<T> settings) {
   auto deg_to_rad = [](T angle) {
     return angle * M_PI / 180;
   };
@@ -65,7 +65,7 @@ void set_initial_conditions(Simulation::SimulationContext<T>& sim, Simulation::S
       }
     }
 
-    Component::Vector<T> velocity{static_cast<T>(vx), static_cast<T>(vy), 0.f};
+    Component::Vector<T, float> velocity{static_cast<float>(vx), static_cast<float>(vy), static_cast<float>(0.f)};
 
     int px = ((-(settings.x_width / 2)) + (i % grid) * x_spacing + placement_buffer / 2) + x_spacing / 2;
     int py = ((settings.y_width / 2) - (i / grid) * y_spacing - placement_buffer / 2) - y_spacing / 2;
@@ -73,7 +73,7 @@ void set_initial_conditions(Simulation::SimulationContext<T>& sim, Simulation::S
     auto mass = mass_dist(gen);
     auto radius = radius_dist(gen);
 
-    Component::Vector<T> position{static_cast<T>(px), static_cast<T>(py), 0.f};
+    Component::Vector<T, float> position{static_cast<float>(px), static_cast<float>(py), static_cast<float>(0.f)};
     Component::Particle<T> particle(radius, mass, velocity, position);
 
     particles.push_back(particle);
@@ -91,7 +91,7 @@ template <typename T>
 bool validate_free(const std::vector<Component::Particle<T>>& particles,
                           size_t radius, Component::Vector<T> pos) {
   for (const auto& p : particles) {
-    if ((p.get_position() - pos).magnitude < radius * Simulation::DefaultSettings.overlap_detection) {
+    if ((p.get_position() - pos).magnitude < radius * Simulation::DefaultSettings<T>.overlap_detection) {
       return false;
     }
   }

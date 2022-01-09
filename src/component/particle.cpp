@@ -15,5 +15,6 @@ void Particle<T>::set_position(const Vector<T>& p) {
 
 template class Particle<float>;
 template class Particle<double>;
+template class Particle<int64_t>;
 
 } // namespace Simulation

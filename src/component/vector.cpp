@@ -33,5 +33,6 @@ Vector<T> Vector<T>::collinear_vector(T magnitude) const {
 
 template struct Vector<float>;
 template struct Vector<double>;
+template struct Vector<int64_t>;
 
 } // namespace Simulation

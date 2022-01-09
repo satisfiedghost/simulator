@@ -6,13 +6,13 @@
 
 namespace Component {
 
-template<typename T>
+template<typename T, typename U = T>
 struct Vector {
-  static_assert(!std::is_integral<T>::value, "Integral types are not yet supported.");
+  typedef T vector_t;
 
   Vector() {};
 
-  Vector(T x, T y, T z)
+  Vector<T, U>(U x, U y, U z)
         : m_x(x)
         , m_y(y)
         , m_z(z)
@@ -21,6 +21,16 @@ struct Vector {
                                 std::pow(m_y, static_cast<T>(2)) +
                                 std::pow(m_z, static_cast<T>(2)));
         }
+
+  //Vector(T x, T y, T z)
+  //      : m_x(x)
+  //      , m_y(y)
+  //      , m_z(z)
+  //      {
+  //        magnitude = std::sqrt(std::pow(m_x, static_cast<T>(2)) +
+  //                              std::pow(m_y, static_cast<T>(2)) +
+  //                              std::pow(m_z, static_cast<T>(2)));
+  //      }
 
   Vector(const Vector<T>& other) {
     this->m_x = other.m_x;
@@ -53,6 +63,15 @@ struct Vector {
   T m_z;
   T magnitude;
 };
+
+// specialized int64 ctor
+template <>
+Vector<int64_t, double>::Vector(double x, double y, double z) {
+  m_x = static_cast<int64_t>(x * 10'000UL);
+  m_y = static_cast<int64_t>(y * 10'000UL);
+  m_z = static_cast<int64_t>(z * 10'000UL);
+}
+
 
 // todo should these be available as a member function to avoid copy overhead?
 

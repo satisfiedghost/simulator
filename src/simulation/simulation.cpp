@@ -34,6 +34,11 @@ void SimulationContext<T>::add_particle_internal(Component::Particle<T>& p) {
   p.uid.latch(m_particle_count + 1);
   // TODO we don't support adding particles at runtime (properly yet)
   // you can do it, it just might look weird
+  auto scaled_particle = Component::Partice<T>(p.get_radius() * FIXED_POINT_SCALAR,
+                                               p.get_mass() * FIXED_POINT_SCALAR,
+                                               p.get_velocity() * FIXED_POINT_SCALAR,
+                                               p.get_position() * FIXED_POINT_SCALAR);
+
   m_particle_count++;
   m_particle_buffer.push_back(p);
 }
@@ -207,5 +212,6 @@ template class SimulationContext<double>;
 
 template void SimulationContextThread(SimulationContext<float>& sim, SimSettings settings);
 template void SimulationContextThread(SimulationContext<double>& sim, SimSettings settings);
+template void SimulationContextThread(SimulationContext<int64_t>& sim, SimSettings settings);
 
 } // namespace Simulation

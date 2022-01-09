@@ -30,10 +30,10 @@ Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::
         po::value<float>(&settings.angle),
         "Start all particles travelling at this angle (in degrees).")
       ("radius-min",
-        po::value<size_t>(&settings.radius_min)->default_value(Simulation::DefaultSettings.radius_min),
+        po::value<float>(&settings.radius_min)->default_value(Simulation::DefaultSettings.radius_min),
         "Particle radii, whole number.")
       ("radius-max",
-        po::value<size_t>(&settings.radius_max)->default_value(Simulation::DefaultSettings.radius_max),
+        po::value<float>(&settings.radius_max)->default_value(Simulation::DefaultSettings.radius_max),
         "Particle radii, whole number.")
       ("color",
         po::value<std::vector<int>>()->multitoken(),

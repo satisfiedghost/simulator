@@ -29,6 +29,7 @@ struct DrawParticle {
 template <typename T>
 void SimulationWindowThread(const Simulation::SimulationContext<T>& sim, Simulation::SimSettings settings) {
   std::vector<DrawParticle> draw_particles;
+  auto FIXED_POINT_SCALAR = Simulation::SimulationContext<T>::FIXED_POINT_SCALAR;
 
   bool user_color = false;
   bool user_color_range = false;
@@ -60,10 +61,10 @@ void SimulationWindowThread(const Simulation::SimulationContext<T>& sim, Simulat
   auto& sim_particles = sim.get_particles();
 
   for (const auto& p : sim_particles) {
-    sf::CircleShape tshape(p.get_radius());
+    sf::CircleShape tshape(p.get_radius(), FIXED_POINT_SCALAR);
     draw_particles.push_back({tshape,
-                              (desktop_mode.width / 2) - static_cast<float>(p.get_radius()),
-                              (desktop_mode.height / 2) - static_cast<float>(p.get_radius())});
+                              (desktop_mode.width / 2) - static_cast<float>(p.get_radius() / FIXED_POINT_SCALAR),
+                              (desktop_mode.height / 2) - static_cast<float>(p.get_radius() / FIXED_POINT_SCALAR)});
   }
 
   if (settings.trace.size() > 0) {
@@ -134,7 +135,7 @@ void SimulationWindowThread(const Simulation::SimulationContext<T>& sim, Simulat
       for (const auto& p : sim_particles) {
         auto pos = p.get_position();
 
-        draw_particles[idx].set_position(pos.one(), -pos.two());
+        draw_particles[idx].set_position(pos.one() / FIXED_POINT_SCALAR, -pos.two() / FIXED_POINT_SCALAR);
         window->draw(draw_particles[idx]);
         idx++;
       }
