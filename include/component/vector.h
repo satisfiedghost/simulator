@@ -1,14 +1,25 @@
 #pragma once
+
+#include "util/fixed_point.h"
+
 #include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <type_traits>
 
 namespace Component {
+// Allows us to use ADL to defer to the correct sqrt/pow impls
+using std::sqrt;
+using std::pow;
+using std::abs;
 
+// T is the underlying type
+// U is an optional type which can be coverted to T
 template<typename T>
 struct Vector {
-  static_assert(!std::is_integral<T>::value, "Integral types are not yet supported.");
+
+  // Underlying type for the vector
+  typedef T vector_t;
 
   Vector() {};
 
@@ -17,9 +28,9 @@ struct Vector {
         , m_y(y)
         , m_z(z)
         {
-          magnitude = std::sqrt(std::pow(m_x, static_cast<T>(2)) +
-                                std::pow(m_y, static_cast<T>(2)) +
-                                std::pow(m_z, static_cast<T>(2)));
+          magnitude = sqrt(pow(m_x, static_cast<T>(2)) +
+                           pow(m_y, static_cast<T>(2)) +
+                           pow(m_z, static_cast<T>(2)));
         }
 
   Vector(const Vector<T>& other) {
@@ -32,10 +43,10 @@ struct Vector {
   // get a unit vector
   Vector unit_vector() const;
 
-  // Get this vector as a an absolute vector
+  // Get this vector as an absolute vector
   // useful for e.g. "dividing" something across this vector without
   // worrying about signs
-  Vector abs() const;
+  Vector absolute() const;
 
   // Return a collinear vector with the given magnitude
   Vector collinear_vector(T magnitude) const;
@@ -54,7 +65,7 @@ struct Vector {
   T magnitude;
 };
 
-// todo should these be available as a member function to avoid copy overhead?
+// TODO provide these as member functions
 
 // Vector * Scalar
 template<typename T>

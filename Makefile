@@ -29,6 +29,8 @@ $(info OBJ is $(OBJ))
 
 DEBUG_OBJ := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.debug.o, $(SRC))
 
+ROOTS := include/util/roots.h
+
 all: $(EXE) test
 
 sim: $(EXE)
@@ -54,6 +56,7 @@ clean:
 	@$(RM) -r tst/cmake_install.cmake
 	@$(RM) -r tst/lib/
 	@$(RM) -r tst/*_include.cmake
+	@$(RM) include/util/roots.h
 
 # Hacky, but they're tests...
 test: $(OBJ)
@@ -69,14 +72,17 @@ $(DEBUG): $(DEBUG_OBJ) | $(BIN_DIR)
 $(EXE): $(OBJ) | $(BIN_DIR)
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR) $(ROOTS)
 	$(CXX) $(CPPFLAGS) -c $< -o $@
 
-$(OBJ_DIR)/%.debug.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
+$(OBJ_DIR)/%.debug.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR) $(ROOTS)
 	$(CXX) $(CPPFLAGS) -c $< -o $@
 
 $(OBJ_DIR):
-	mkdir -p $@ $@/component $@/simulation $@/graphics $@/cli $@/physics $@/graphics
+	mkdir -p $@ $@/component $@/simulation $@/graphics $@/cli $@/physics $@/graphics $@/util $@/demo
 
 $(BIN_DIR):
 	mkdir -p $@
+
+$(ROOTS): include/util/root.py
+	python3 include/util/root.py
