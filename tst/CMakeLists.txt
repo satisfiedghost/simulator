@@ -16,11 +16,16 @@ FetchContent_MakeAvailable(googletest)
 find_package(OpenMP)
 if (OPENMP_FOUND)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -O2")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -O2 -fno-access-control")
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
 enable_testing()
+
+add_executable(
+  test_fixed
+  test_fixed.cc
+)
 
 add_executable(
   test_vector
@@ -35,6 +40,11 @@ add_executable(
 add_executable(
   test_sim
   test_sim.cc
+)
+
+target_include_directories(
+  test_fixed PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
 )
 
 target_include_directories(
@@ -57,9 +67,15 @@ target_include_directories(
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/simulation>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src/physics>
 )
-
 target_link_directories(
+
   test_sim PUBLIC
+)
+
+target_link_libraries(
+  test_fixed
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/util/fixed_point.o
+  gtest_main
 )
 
 target_link_libraries(
@@ -73,11 +89,25 @@ target_link_libraries(
 target_link_libraries(
   test_vector
   ${CMAKE_CURRENT_SOURCE_DIR}/../obj/component/vector.o
+${CMAKE_CURRENT_SOURCE_DIR}/../obj/util/fixed_point.o
+  gtest_main
+)
+
+target_link_libraries(
+  test_particle
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/component/vector.o
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/component/particle.o
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/physics/physics.o
+  gtest_main
+)
+
+target_link_libraries(
   gtest_main
 )
 
 target_link_libraries(
   test_sim
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/util/fixed_point.o
   ${CMAKE_CURRENT_SOURCE_DIR}/../obj/simulation/simulation.o
   ${CMAKE_CURRENT_SOURCE_DIR}/../obj/component/vector.o
   ${CMAKE_CURRENT_SOURCE_DIR}/../obj/component/particle.o
@@ -86,5 +116,5 @@ target_link_libraries(
 )
 
 include(GoogleTest)
-gtest_discover_tests(test_vector test_sim test_particle)
+gtest_discover_tests(test_vector test_sim test_particle test_fixed)
 

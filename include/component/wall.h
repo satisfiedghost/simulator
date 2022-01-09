@@ -19,8 +19,11 @@ enum WallIdx {
 };
 
 // A simulation boundary. The simulation is bounded by a rectangular prism
-template<typename T>
+template<typename V>
 class Wall {
+
+typedef typename V::vector_t vector_t;
+
 public:
   Wall()
         : position_n(0)
@@ -29,27 +32,27 @@ public:
         , idx(WallIdx::SIZE)
         {}
 
-  Wall(T p, Component::Vector<T> n, Component::Vector<T> i, WallIdx index)
+  Wall(vector_t p, V n, V i, WallIdx index)
         : position_n(p)
         , normal_vector(n)
         , inverse_vector(i)
         , idx(index)
         {}
 
-  T position() const { return position_n; }
-  const Component::Vector<T>& normal() const { return normal_vector; }
-  const Component::Vector<T>& inverse() const { return inverse_vector; }
+  const vector_t position() const { return position_n; }
+  const V& normal() const { return normal_vector; }
+  const V& inverse() const { return inverse_vector; }
 
+  template <typename Vv>
+  friend std::ostream& operator<<(std::ostream &os, const Wall<Vv>&);
 
-  template <typename S>
-  friend std::ostream& operator<<(std::ostream &os, const Wall<S>&);
 private:
   // 1D position of this wall, assumed to be a plane wrt normal
-  T position_n;
+  vector_t position_n;
   // Normal vector, points toward simulation origin
-  Component::Vector<T> normal_vector;
+  V normal_vector;
   // When a collision on this wall occurs, multiply by this to get the new velocity
-  Component::Vector<T> inverse_vector;
+  V inverse_vector;
   // Which wall are we?
   WallIdx idx;
 };
@@ -64,8 +67,8 @@ static std::map<size_t, std::string> wall_idx_to_str = {
   {WallIdx::BOTTOM, "Bottom"}
 };
 
-template<typename T>
-std::ostream& operator<<(std::ostream& os, const Wall<T>& wall) {
+template<typename V>
+std::ostream& operator<<(std::ostream& os, const Wall<V>& wall) {
   os << "WallIdx: " << wall_idx_to_str[wall.idx] << " | Pos: " << wall.position_n << std::endl;
   os << "Normal: " << wall.normal_vector << std::endl;
   os << "Inverse: " << wall.inverse_vector;

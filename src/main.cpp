@@ -1,13 +1,18 @@
 #include "cli.h"
-#include "demo/demo.tpp"
+#include "demo/demo.h"
 #include "window.h"
 
+// change to run the system with different underlying types!
+typedef Component::Vector<Util::FixedPoint> sim_t;
+//typedef Component::Vector<double> sim_t;
+//typedef Component::Vector<float> sim_t;
+
 int main(int argc, char** argv) {
-  Simulation::SimulationContext<double> sim;
-  Simulation::SimSettings settings = Simulation::DefaultSettings;
+  Simulation::SimulationContext<sim_t> sim;
+  Simulation::SimSettings<typename sim_t::vector_t> settings = Simulation::DefaultSettings<typename sim_t::vector_t>;
 
   po::variables_map vm;
-  Status s = Cli::parse_cli_args(argc, argv, vm, settings);
+  Status s = Cli::parse_cli_args<typename sim_t::vector_t>(argc, argv, vm, settings);
 
   switch(s) {
     case Status::None:
@@ -19,18 +24,18 @@ int main(int argc, char** argv) {
       break;
   }
 
-  set_initial_conditions(sim, settings);
-  Simulation::PhysicsContext<double> physics_context(settings);
+  Demo::set_initial_conditions<sim_t>(sim, settings);
+  Simulation::PhysicsContext<sim_t> physics_context(settings);
 
   sim.set_physics_context(physics_context);
 
   std::thread window_thread;
 
   if (!settings.no_gui) {
-    window_thread = std::thread(Graphics::SimulationWindowThread<double>, std::ref(sim), settings);
+    window_thread = std::thread(Graphics::SimulationWindowThread<sim_t>, std::ref(sim), settings);
   }
 
-  std::thread sim_thread(Simulation::SimulationContextThread<double>, std::ref(sim), settings);
+  std::thread sim_thread(Simulation::SimulationContextThread<sim_t>, std::ref(sim), settings);
 
   if (!settings.no_gui) {
     window_thread.join();

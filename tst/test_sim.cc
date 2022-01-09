@@ -1,6 +1,4 @@
-#define private public  // they're just words do whatever you want
 #include "context.h"
-#define private private
 
 #include <algorithm>
 #include <array>
@@ -47,7 +45,7 @@ void sim_runner(Simulation::SimulationContext<T>& sim, std::array<int64_t, TestS
   Simulation::PhysicsContext<T> phys;
   std::thread th = std::thread(Util::ring_thread<std::vector<Component::Particle<T>>,
                                                  Component::Particle<T>,
-                                                 Simulation::SimSettings::RingBufferSize>,
+                                                 Simulation::SimSettings<typename T::vector_t>::RingBufferSize>,
                                                  std::ref(sim.m_particle_buffer));
   th.detach();
 
@@ -75,7 +73,10 @@ int64_t calculate_median(std::array<int64_t, TestSettings::N_STEPS> cycle_times_
 }
 
 TEST_F(SimulationTest, Performance) {
-  Simulation::SimulationContext<float> sim;
+  // TODO insantiate with various types to profile performance...
+  typedef Component::Vector<Util::FixedPoint> sim_t;
+
+  Simulation::SimulationContext<sim_t> sim;
 
   sim.set_boundaries(TestSettings.x_width, TestSettings.y_width, TestSettings.z_width);
 
@@ -105,11 +106,11 @@ TEST_F(SimulationTest, Performance) {
     int px = (-(TestSettings.x_width / 2) + 100) + (i % grid) * x_spacing;
     int py = (TestSettings.y_width / 2) - 100 - (i / grid) * y_spacing;
 
-    Vector<float> v{static_cast<float>(vx), static_cast<float>(vy), 0.f};
-    Vector<float> p{static_cast<float>(px), static_cast<float>(py), 0.f};
+    Vector<typename sim_t::vector_t> v{static_cast<float>(vx), static_cast<float>(vy), 0.f};
+    Vector<typename sim_t::vector_t> p{static_cast<float>(px), static_cast<float>(py), 0.f};
 
 
-    Particle<float> particle(radius, mass, v, p);
+    Particle<sim_t> particle(radius, mass, v, p);
     particle.uid.latch(i + 1);
 
     sim.add_particle(particle);
@@ -119,7 +120,7 @@ TEST_F(SimulationTest, Performance) {
   std::array<int64_t, TestSettings::N_STEPS> cycle_times_us;
 
   auto start = chrono::steady_clock::now();
-  std::thread sim_thread(sim_runner<float>, std::ref(sim), std::ref(cycle_times_us));
+  std::thread sim_thread(sim_runner<sim_t>, std::ref(sim), std::ref(cycle_times_us));
   sim_thread.join();
   auto end = chrono::steady_clock::now();
   auto elapsed = chrono::duration_cast<chrono::microseconds>(end - start).count();

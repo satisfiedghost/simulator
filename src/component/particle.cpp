@@ -2,18 +2,19 @@
 
 namespace Component {
 
-template<typename T>
-void Particle<T>::set_velocity(const Vector<T>& v) {
+template<typename V>
+void Particle<V>::set_velocity(const V& v) {
   m_velocity = v;
-  m_kinetic_energy = calculate_kinetic_energy(m_mass, v);
+  m_kinetic_energy = calculate_kinetic_energy();
 }
 
-template<typename T>
-void Particle<T>::set_position(const Vector<T>& p) {
+template<typename V>
+void Particle<V>::set_position(const V& p) {
   m_position = p;
 }
 
-template class Particle<float>;
-template class Particle<double>;
+template class Particle<Vector<float>>;
+template class Particle<Vector<double>>;
+template class Particle<Vector<Util::FixedPoint>>;
 
 } // namespace Simulation

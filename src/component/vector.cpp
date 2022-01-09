@@ -9,10 +9,10 @@ Vector<T> Vector<T>::unit_vector() const {
 }
 
 template<typename T>
-Vector<T> Vector<T>::abs() const {
-  return Vector<T>(std::abs(this->m_x),
-                   std::abs(this->m_y),
-                   std::abs(this->m_z));
+Vector<T> Vector<T>::absolute() const {
+  return Vector<T>(abs(this->m_x),
+                   abs(this->m_y),
+                   abs(this->m_z));
 }
 
 // I'm not sure if this has a mathematic usefulness...
@@ -33,5 +33,6 @@ Vector<T> Vector<T>::collinear_vector(T magnitude) const {
 
 template struct Vector<float>;
 template struct Vector<double>;
+template struct Vector<Util::FixedPoint>;
 
 } // namespace Simulation

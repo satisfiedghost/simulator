@@ -1,7 +1,7 @@
 namespace Component {
 
-template<typename T>
-bool operator==(const Particle<T>& first, const Particle<T>& second) {
+template<typename V>
+bool operator==(const Particle<V>& first, const Particle<V>& second) {
   return first.uid.get() == second.uid.get() and
          first.get_mass() == second.get_mass() and
          first.get_radius() == second.get_radius() and

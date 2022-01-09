@@ -6,10 +6,11 @@
 
 namespace Graphics {
 
-template <typename T>
-void SimulationWindowThread(const Simulation::SimulationContext<T>& sim, Simulation::SimSettings settings);
+template <typename V>
+void SimulationWindowThread(const Simulation::SimulationContext<V>& sim, Simulation::SimSettings<typename V::vector_t> settings);
 
 // Get the dimensions of the screen.
+template<typename VT>
 std::tuple<size_t, size_t, size_t> get_window_size();
 
 }

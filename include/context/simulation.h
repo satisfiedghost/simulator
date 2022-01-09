@@ -15,11 +15,14 @@ namespace Simulation {
  * The simulation class manages time and holds references to all objects within the context
  */
 
-template<typename T>
+template<typename V>
 class SimulationContext {
+
+typedef typename V::vector_t vector_t;
+
 public:
   // Construct a simulation with settings
-  SimulationContext(SimSettings settings)
+  SimulationContext(SimSettings<vector_t> settings)
                     : SimulationContext() {
                       m_settings = settings;
                     }
@@ -32,7 +35,7 @@ public:
                    , m_tock(m_start)
                    , m_free_run(false)
                    , should_calc_next_step(true)
-                   , m_settings(DefaultSettings)
+                   , m_settings(DefaultSettings<vector_t>)
                    {}
 
   // get the time of the simulation
@@ -43,16 +46,16 @@ public:
 
   // add a particle into the simulation
   // makes a copy of the particle
-  void add_particle(Component::Particle<T>);
+  void add_particle(Component::Particle<V>);
 
   // add a particle into the simulation by passing a velocity and position vector
-  void add_particle(const Component::Vector<T>&, const Component::Vector<T>&);
+  void add_particle(const V&, const V&);
 
   // run the simulation, please call repeatedly in a dedicated thread
   void run();
 
   // read-only view of particles, in their last good state
-  const std::vector<Component::Particle<T>>& get_particles() const {
+  const std::vector<Component::Particle<V>>& get_particles() const {
     return m_particle_buffer.latest();
   }
 
@@ -60,7 +63,7 @@ public:
   // only support this as a whole number now (it's generally the size of the screen)
   void set_boundaries(size_t, size_t, size_t);
 
-  const std::array<Component::Wall<T>, Component::WallIdx::SIZE>& get_boundaries() const {
+  const std::array<Component::Wall<V>, Component::WallIdx::SIZE>& get_boundaries() const {
     return m_boundaries;
   }
 
@@ -69,15 +72,15 @@ public:
   void set_free_run(bool);
 
   // Set the settings
-  void set_settings(const SimSettings&);
+  void set_settings(const SimSettings<vector_t>&);
 
   // View the settings this simulation is using
-  const SimSettings& get_settings() const;
+  const SimSettings<vector_t>& get_settings() const;
 
-  template<typename S>
-  friend void SimulationContextThread(SimulationContext<S>& sim, SimSettings settings);
+  template<typename Vv>
+  friend void SimulationContextThread(SimulationContext<Vv>& sim, SimSettings<typename Vv::vector_t> settings);
 
-  void set_physics_context(Simulation::PhysicsContext<T> pc) {
+  void set_physics_context(Simulation::PhysicsContext<V> pc) {
     m_physics_context = pc;
     m_physics_context.set_sim(this);
   }
@@ -85,17 +88,17 @@ public:
   size_t get_step() { return m_step; }
 
 private:
-  void add_particle_internal(Component::Particle<T>&);
+  void add_particle_internal(Component::Particle<V>&);
 
   // keeping a ringbuffer of particles allows us to go back N steps in time, with minimal overhead
-  Util::ThreadedRingBuffer<std::vector<Component::Particle<T>>, Component::Particle<T>, SimSettings::RingBufferSize> m_particle_buffer;
+  Util::ThreadedRingBuffer<std::vector<Component::Particle<V>>, Component::Particle<V>, SimSettings<V>::RingBufferSize> m_particle_buffer;
 
   chrono::steady_clock m_sim_clock;
   const chrono::time_point<chrono::steady_clock, US_T> m_start;
   chrono::time_point<chrono::steady_clock, US_T> m_tock;
   bool m_free_run;
 
-  std::array<Component::Wall<T>, Component::WallIdx::SIZE> m_boundaries;
+  std::array<Component::Wall<V>, Component::WallIdx::SIZE> m_boundaries;
 
   // Number of steps the simulator has run
   size_t m_step = 0;
@@ -119,16 +122,16 @@ private:
   size_t m_particle_count = 0;
 
   // Invariant settings for the system (well as long as you don't call update settings at runtime, which might be fun)
-  Util::LatchingValue<SimSettings> m_settings;
+  Util::LatchingValue<SimSettings<vector_t>> m_settings;
 
   // Physics rules for the simulation
-  Simulation::PhysicsContext<T> m_physics_context;
+  Simulation::PhysicsContext<V> m_physics_context;
 };
 
 // run me!
 // run me!
 // come on, run me!
-template<typename T>
-void SimulationContextThread(SimulationContext<T>& sim, SimSettings settings);
+template<typename V>
+void SimulationContextThread(SimulationContext<V>& sim, SimSettings<typename V::vector_t> settings);
 
 } // Simulation
