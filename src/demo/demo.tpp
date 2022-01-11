@@ -122,7 +122,7 @@ void correct_overlap(std::vector<Component::Particle<T>>& particles, std::mt1993
           }
           // smaller one gets moved, less likely to cause compounding issues
           auto& mover = (a.get_radius() < b.get_radius()) ? a : b;
-          auto stayer = (mover == a) ? b : a;
+          const auto& stayer = (mover == a) ? b : a;
 
           // this is truly horrible but we only do it once at init...
           bool found_free_space = false;
@@ -137,9 +137,7 @@ void correct_overlap(std::vector<Component::Particle<T>>& particles, std::mt1993
             auto new_pos = stayer.get_position() + 1.1 * offset.collinear_vector(a.get_radius() + b.get_radius());
             if (validate_free(particles, mover.get_radius(), new_pos)) {
               found_free_space = true;
-              auto uid = mover.uid;
               mover = Component::Particle<T>(mover.get_radius(), mover.get_mass(), mover.get_velocity(), new_pos);
-              mover.uid.latch(uid.get());
             }
           } while(!found_free_space);
         }
