@@ -6,19 +6,19 @@
 
 namespace Simulation {
 
-template<typename T>
-Status PhysicsContext<T>::collide(Component::Particle<T>& a, Component::Particle<T>& b) {
+template<typename V>
+Status PhysicsContext<V>::collide(Component::Particle<V>& a, Component::Particle<V>& b) {
   return collide_internal(a, b, true);
 }
 
-template<typename T>
-Status PhysicsContext<T>::collide_internal(Component::Particle<T>& a, Component::Particle<T>& b, bool retry) {
+template<typename V>
+Status PhysicsContext<V>::collide_internal(Component::Particle<V>& a, Component::Particle<V>& b, bool retry) {
   // are these particles even close enough for this?
   // define a vector from the other object's COM to ours
   const auto dist = a.get_position() - b.get_position();
 
   // nope too far away
-  if (dist.magnitude > static_cast<T>(a.get_radius() + b.get_radius())) {
+  if (dist.magnitude > static_cast<vector_t>(a.get_radius() + b.get_radius())) {
     return Status::None;
   }
 
@@ -36,7 +36,7 @@ Status PhysicsContext<T>::collide_internal(Component::Particle<T>& a, Component:
   // the impulse vector is the dot product of its unit vector and the difference in velocities, multiplied by the unit vector
   // I am not completely sure why, but we seem to need to use the absolute value of the dot product lest it be negative and
   // flip the direction of our impulse
-  const auto dot_product_abs = std::abs(impulse_unit_vector ^ v_delta_before);
+  const auto dot_product_abs = abs(impulse_unit_vector ^ v_delta_before);
   const auto impulse_vector = 2 * impulse_unit_vector * (dot_product_abs / (a.get_inverse_mass() + b.get_inverse_mass()));
 
   DEBUG_MSG(COLLISION_DETECTED);
@@ -54,7 +54,7 @@ Status PhysicsContext<T>::collide_internal(Component::Particle<T>& a, Component:
   // the random case, but otherwise we simply bail and restore the original velocities.
   const auto ka_after = a.get_kinetic_energy();
   const auto kb_after = b.get_kinetic_energy();
-  const auto k_delta = std::abs((ka_before + kb_before) - (ka_after + kb_after));
+  const auto k_delta = abs((ka_before + kb_before) - (ka_after + kb_after));
 
   // energy must be conserved
   if (k_delta != 0) {
@@ -91,8 +91,8 @@ Status PhysicsContext<T>::collide_internal(Component::Particle<T>& a, Component:
   return Status::Success;
 }
 
-template<typename T>
-Status PhysicsContext<T>::correct_collision(Component::Particle<T>& a, Component::Particle<T>& b) {
+template<typename V>
+Status PhysicsContext<V>::correct_collision(Component::Particle<V>& a, Component::Particle<V>& b) {
   // two particles, gone astray. let's see if we can put them on the right course with some mandatory re-education
   const auto& last_state = m_outer_sim->get_particles();
 
@@ -158,12 +158,12 @@ Status PhysicsContext<T>::correct_collision(Component::Particle<T>& a, Component
   return Status::Failure;
 }
 
-template<typename T>
-Status PhysicsContext<T>::bounce(Component::Particle<T>& p, const Component::Wall<T>& wall) {
+template<typename V>
+Status PhysicsContext<V>::bounce(Component::Particle<V>& p, const Component::Wall<V>& wall) {
 
   // are we traveling toward this wall?
   // velocity sign in relevant direction must oppose normal vector of wall
-  auto v_relative = p.get_velocity() * wall.normal().abs();
+  auto v_relative = p.get_velocity() * wall.normal().absolute();
 
   // since this is now a 1D vector, its sum is just the relevant portion... check if signs are opposite
   if ((v_relative.sum() < 0) == (wall.normal().sum() < 0)) {
@@ -171,9 +171,9 @@ Status PhysicsContext<T>::bounce(Component::Particle<T>& p, const Component::Wal
   }
 
   // Ok we're traveling at the wall, but are we close enough for a collision?
-  auto distance = std::abs((p.get_position() * wall.normal().abs()).sum() - wall.position());
+  auto distance = abs((p.get_position() * wall.normal().absolute()).sum() - wall.position());
 
-  if (distance <= static_cast<T>(p.get_radius())) {
+  if (distance <= static_cast<vector_t>(p.get_radius())) {
     p.set_velocity(p.get_velocity() * wall.inverse());
 
     DEBUG_MSG(BOUNCE_DETECTION);
@@ -183,22 +183,38 @@ Status PhysicsContext<T>::bounce(Component::Particle<T>& p, const Component::Wal
   return Status::None;
 }
 
-template<typename T>
-void PhysicsContext<T>::gravity(Component::Particle<T>& p, US_T us) {
-  T time_scalar = chrono::duration_cast<chrono::duration<T>>(us).count();
+template<typename V>
+void PhysicsContext<V>::gravity(Component::Particle<V>& p, US_T us) {
+  vector_t time_scalar = chrono::duration_cast<chrono::duration<vector_t>>(us).count();
   p.set_velocity(p.get_velocity() + (m_gravity.get() * time_scalar));
 }
 
-template<typename T>
-void PhysicsContext<T>::step(Component::Particle<T>& p, US_T us) {
+// TODO FFS fix this
+template <>
+void PhysicsContext<Component::Vector<Util::FixedPoint>>::gravity(Component::Particle<Component::Vector<Util::FixedPoint>>& p, US_T us) {
+  (void)us;
+  Util::FixedPoint time_scalar(0.01);
+  p.set_velocity(p.get_velocity() + (m_gravity.get() * time_scalar));
+}
+
+template<typename V>
+void PhysicsContext<V>::step(Component::Particle<V>& p, US_T us) {
   // move the amount we would expect, with our given velocity
-  T time_scalar = chrono::duration_cast<chrono::duration<T>>(us).count();
-  //std::cout << "scalar: " << time_scalar << std::endl;
+  vector_t time_scalar = chrono::duration_cast<chrono::duration<vector_t>>(us).count();
   p.set_position(p.get_position() + (p.get_velocity() * time_scalar));
 }
 
-template class PhysicsContext<float>;
-template class PhysicsContext<double>;
-template class PhysicsContext<int64_t>;
+// TODO FFS fix this
+template <>
+void PhysicsContext<Component::Vector<Util::FixedPoint>>::step(Component::Particle<Component::Vector<Util::FixedPoint>>& p, US_T us) {
+  (void)us;
+  // move the amount we would expect, with our given velocity
+  Util::FixedPoint time_scalar(0.01);
+  p.set_position(p.get_position() + (p.get_velocity() * time_scalar));
+}
+
+template class PhysicsContext<Component::Vector<float>>;
+template class PhysicsContext<Component::Vector<double>>;
+template class PhysicsContext<Component::Vector<Util::FixedPoint>>;
 
 } // namespace Physics

@@ -8,43 +8,38 @@
 
 namespace Simulation {
 
-template<typename T>
-chrono::time_point<chrono::steady_clock> SimulationContext<T>::get_simulation_time() const {
+template<typename V>
+chrono::time_point<chrono::steady_clock> SimulationContext<V>::get_simulation_time() const {
   return m_sim_clock.now();
 }
 
-template<typename T>
-chrono::microseconds SimulationContext<T>::get_elapsed_time_us() const {
+template<typename V>
+chrono::microseconds SimulationContext<V>::get_elapsed_time_us() const {
   auto now = get_simulation_time();
   return chrono::duration_cast<chrono::microseconds>(now - m_start);
 }
 
-template<typename T>
-void SimulationContext<T>::add_particle(Component::Particle<T> p) {
+template<typename V>
+void SimulationContext<V>::add_particle(Component::Particle<V> p) {
   add_particle_internal(p);
 }
 
-template<typename T>
-void SimulationContext<T>::add_particle(const Component::Vector<T>& v, const Component::Vector<T> & p) {
-  add_particle(Component::Particle<T>(v, p));
+template<typename V>
+void SimulationContext<V>::add_particle(const V& v, const V& p) {
+  add_particle(Component::Particle<V>(v, p));
 }
 
-template<typename T>
-void SimulationContext<T>::add_particle_internal(Component::Particle<T>& p) {
+template<typename V>
+void SimulationContext<V>::add_particle_internal(Component::Particle<V>& p) {
   p.uid.latch(m_particle_count + 1);
   // TODO we don't support adding particles at runtime (properly yet)
   // you can do it, it just might look weird
-  auto scaled_particle = Component::Partice<T>(p.get_radius() * FIXED_POINT_SCALAR,
-                                               p.get_mass() * FIXED_POINT_SCALAR,
-                                               p.get_velocity() * FIXED_POINT_SCALAR,
-                                               p.get_position() * FIXED_POINT_SCALAR);
-
   m_particle_count++;
   m_particle_buffer.push_back(p);
 }
 
-template<typename T>
-void SimulationContext<T>::run() {
+template<typename V>
+void SimulationContext<V>::run() {
   auto now = m_sim_clock.now();
   auto elapsed = chrono::duration_cast<chrono::microseconds>(now - m_tock);
 
@@ -58,7 +53,7 @@ void SimulationContext<T>::run() {
   }
 
   // whistle and wait
-  std::shared_ptr<std::vector<Component::Particle<T>>> particles;
+  std::shared_ptr<std::vector<Component::Particle<V>>> particles;
   while (m_particle_buffer.get_writeable(particles) == Status::NotReady) {}
 
   should_calc_next_step = false;
@@ -121,61 +116,61 @@ void SimulationContext<T>::run() {
 }
 
 // stand up for yourself
-template<typename T>
-void SimulationContext<T>::set_boundaries(size_t x, size_t y, size_t z) {
-  auto x_half = static_cast<T>(x) / static_cast<T>(2);
-  auto y_half = static_cast<T>(y) / static_cast<T>(2);
-  auto z_half = static_cast<T>(z) / static_cast<T>(2);
+template<typename V>
+void SimulationContext<V>::set_boundaries(size_t x, size_t y, size_t z) {
+  auto x_half = static_cast<typename V::vector_t>(x) / static_cast<typename V::vector_t>(2);
+  auto y_half = static_cast<typename V::vector_t>(y) / static_cast<typename V::vector_t>(2);
+  auto z_half = static_cast<typename V::vector_t>(z) / static_cast<typename V::vector_t>(2);
 
-  m_boundaries[Component::WallIdx::LEFT]   = std::move(Component::Wall<T>({-x_half,
-                                                       Component::Vector<T>(1, 0, 0),
-                                                       Component::Vector<T>(-1, 1, 1),
+  m_boundaries[Component::WallIdx::LEFT]   = std::move(Component::Wall<V>({-x_half,
+                                                       V(1, 0, 0),
+                                                       V(-1, 1, 1),
                                                        Component::WallIdx::LEFT}));
 
-  m_boundaries[Component::WallIdx::RIGHT]  = std::move(Component::Wall<T>({x_half,
-                                                       Component::Vector<T>(-1, 0, 0),
-                                                       Component::Vector<T>(-1, 1, 1),
+  m_boundaries[Component::WallIdx::RIGHT]  = std::move(Component::Wall<V>({x_half,
+                                                       V(-1, 0, 0),
+                                                       V(-1, 1, 1),
                                                        Component::WallIdx::RIGHT}));
 
-  m_boundaries[Component::WallIdx::BOTTOM] = std::move(Component::Wall<T>({-y_half,
-                                                       Component::Vector<T>(0, 1, 0),
-                                                       Component::Vector<T>(1, -1, 1),
+  m_boundaries[Component::WallIdx::BOTTOM] = std::move(Component::Wall<V>({-y_half,
+                                                       V(0, 1, 0),
+                                                       V(1, -1, 1),
                                                        Component::WallIdx::BOTTOM}));
 
-  m_boundaries[Component::WallIdx::TOP]    = std::move(Component::Wall<T>({y_half,
-                                                       Component::Vector<T>(0, -1, 0),
-                                                       Component::Vector<T>(1, -1, 1),
+  m_boundaries[Component::WallIdx::TOP]    = std::move(Component::Wall<V>({y_half,
+                                                       V(0, -1, 0),
+                                                       V(1, -1, 1),
                                                        Component::WallIdx::TOP}));
 
-  m_boundaries[Component::WallIdx::BACK]   = std::move(Component::Wall<T>({-z_half,
-                                                       Component::Vector<T>(0, 0, 1),
-                                                       Component::Vector<T>(1, 1, -1),
+  m_boundaries[Component::WallIdx::BACK]   = std::move(Component::Wall<V>({-z_half,
+                                                       V(0, 0, 1),
+                                                       V(1, 1, -1),
                                                        Component::WallIdx::BACK}));
 
-  m_boundaries[Component::WallIdx::FRONT]  = std::move(Component::Wall<T>({z_half,
-                                                       Component::Vector<T>(0, 0, -1),
-                                                       Component::Vector<T>(1, 1, -1),
+  m_boundaries[Component::WallIdx::FRONT]  = std::move(Component::Wall<V>({z_half,
+                                                       V(0, 0, -1),
+                                                       V(1, 1, -1),
                                                        Component::WallIdx::FRONT}));
 
 }
 
-template<typename T>
-void SimulationContext<T>::set_free_run(bool free_run) {
+template<typename V>
+void SimulationContext<V>::set_free_run(bool free_run) {
   m_free_run = free_run;
 }
 
-template<typename T>
-void SimulationContext<T>::set_settings(const SimSettings& settings) {
-  m_settings = Util::LatchingValue<SimSettings>(settings);
+template<typename V>
+void SimulationContext<V>::set_settings(const SimSettings<vector_t>& settings) {
+  m_settings = Util::LatchingValue<SimSettings<typename V::vector_t>>(settings);
 }
 
-template<typename T>
-const SimSettings& SimulationContext<T>::get_settings() const {
+template<typename V>
+const SimSettings<typename V::vector_t>& SimulationContext<V>::get_settings() const {
   return m_settings.get();
 }
 
-template<typename T>
-void SimulationContextThread(SimulationContext<T>& sim, SimSettings settings) {
+template<typename V>
+void SimulationContextThread(SimulationContext<V>& sim, SimSettings<typename V::vector_t> settings) {
   sim.set_settings(settings);
 
   if (settings.display_mode) {
@@ -193,9 +188,9 @@ void SimulationContextThread(SimulationContext<T>& sim, SimSettings settings) {
 
   // startup the buffer-copy thread
   std::thread ring_buffer_copy_thread =
-        std::thread(Util::ring_thread<std::vector<Component::Particle<T>>,
-                                      Component::Particle<T>,
-                                      SimSettings::RingBufferSize>,
+        std::thread(Util::ring_thread<std::vector<Component::Particle<V>>,
+                                      Component::Particle<V>,
+                                      SimSettings<typename V::vector_t>::RingBufferSize>,
                                       std::ref(sim.m_particle_buffer));
   ring_buffer_copy_thread.detach();
 
@@ -207,11 +202,12 @@ void SimulationContextThread(SimulationContext<T>& sim, SimSettings settings) {
   }
 }
 
-template class SimulationContext<float>;
-template class SimulationContext<double>;
+template class SimulationContext<Component::Vector<float>>;
+template class SimulationContext<Component::Vector<double>>;
+template class SimulationContext<Component::Vector<Util::FixedPoint>>;
 
-template void SimulationContextThread(SimulationContext<float>& sim, SimSettings settings);
-template void SimulationContextThread(SimulationContext<double>& sim, SimSettings settings);
-template void SimulationContextThread(SimulationContext<int64_t>& sim, SimSettings settings);
+template void SimulationContextThread(SimulationContext<Component::Vector<float>>& sim, SimSettings<float> settings);
+template void SimulationContextThread(SimulationContext<Component::Vector<double>>& sim, SimSettings<double> settings);
+template void SimulationContextThread(SimulationContext<Component::Vector<Util::FixedPoint>>& sim, SimSettings<Util::FixedPoint> settings);
 
 } // namespace Simulation

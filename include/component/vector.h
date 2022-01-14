@@ -1,36 +1,37 @@
 #pragma once
+
+#include "util/fixed_point.h"
+
 #include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <type_traits>
 
 namespace Component {
+// Allows us to use ADL to defer to the correct sqrt/pow impls
+using std::sqrt;
+using std::pow;
+using std::abs;
 
+// T is the underlying type
+// U is an optional type which can be coverted to T
 template<typename T, typename U = T>
 struct Vector {
+
+  // Undderlying type for the vector
   typedef T vector_t;
 
   Vector() {};
 
   Vector<T, U>(U x, U y, U z)
-        : m_x(x)
-        , m_y(y)
-        , m_z(z)
+        : m_x(static_cast<T>(x))
+        , m_y(static_cast<T>(y))
+        , m_z(static_cast<T>(z))
         {
-          magnitude = std::sqrt(std::pow(m_x, static_cast<T>(2)) +
-                                std::pow(m_y, static_cast<T>(2)) +
-                                std::pow(m_z, static_cast<T>(2)));
+          magnitude = sqrt(pow(m_x, static_cast<T>(2)) +
+                           pow(m_y, static_cast<T>(2)) +
+                           pow(m_z, static_cast<T>(2)));
         }
-
-  //Vector(T x, T y, T z)
-  //      : m_x(x)
-  //      , m_y(y)
-  //      , m_z(z)
-  //      {
-  //        magnitude = std::sqrt(std::pow(m_x, static_cast<T>(2)) +
-  //                              std::pow(m_y, static_cast<T>(2)) +
-  //                              std::pow(m_z, static_cast<T>(2)));
-  //      }
 
   Vector(const Vector<T>& other) {
     this->m_x = other.m_x;
@@ -42,10 +43,10 @@ struct Vector {
   // get a unit vector
   Vector unit_vector() const;
 
-  // Get this vector as a an absolute vector
+  // Get this vector as an absolute vector
   // useful for e.g. "dividing" something across this vector without
   // worrying about signs
-  Vector abs() const;
+  Vector absolute() const;
 
   // Return a collinear vector with the given magnitude
   Vector collinear_vector(T magnitude) const;
@@ -57,6 +58,9 @@ struct Vector {
   const T& one() const {return m_x;};
   const T& two() const {return m_y;};
   const T& three() const {return m_z;};
+
+  // Vector<T, U> is implicitly convertible to Vector<T>
+  operator Vector<T>() { return Vector<T>(m_x, m_y, m_z); }
 
   T m_x;
   T m_y;

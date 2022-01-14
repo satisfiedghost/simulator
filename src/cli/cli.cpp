@@ -4,36 +4,38 @@
 
 namespace Cli {
 
-Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::SimSettings& settings) {
+template <typename V>
+Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::SimSettings<typename V::vector_t>& settings) {
+  typedef typename V::vector_t vector_t;
   po::options_description desc("Allowed options");
   desc.add_options()
       ("help", "Display this help message.")
       ("pcount",
-        po::value<size_t>(&settings.number_particles)->default_value(Simulation::DefaultSettings.number_particles),
+        po::value<size_t>(&settings.number_particles)->default_value(Simulation::DefaultSettings<vector_t>.number_particles),
         "Number of particles.")
       ("vmin",
-        po::value<int>(&settings.vmin)->default_value(Simulation::DefaultSettings.vmin),
+        po::value<int>(&settings.vmin)->default_value(Simulation::DefaultSettings<vector_t>.vmin),
         "Minimum starting velocity.")
       ("vmax",
-        po::value<int>(&settings.vmax)->default_value(Simulation::DefaultSettings.vmax),
+        po::value<int>(&settings.vmax)->default_value(Simulation::DefaultSettings<vector_t>.vmax),
         "Maximum starting velocity.")
       ("vall",
         po::value<int>(),
         "Start all particles at this velocity. Overrides --vmin and --vmax.")
       ("mass-min",
-        po::value<float>(&settings.mass_min)->default_value(Simulation::DefaultSettings.mass_min),
+        po::value<float>(&settings.mass_min)->default_value(Simulation::DefaultSettings<vector_t>.mass_min),
         "Minimum mass allowed for a particle")
       ("mass-max",
-        po::value<float>(&settings.mass_max)->default_value(Simulation::DefaultSettings.mass_max),
+        po::value<float>(&settings.mass_max)->default_value(Simulation::DefaultSettings<vector_t>.mass_max),
         "Maximum mass allowed for a particle")
       ("angle",
         po::value<float>(&settings.angle),
         "Start all particles travelling at this angle (in degrees).")
       ("radius-min",
-        po::value<float>(&settings.radius_min)->default_value(Simulation::DefaultSettings.radius_min),
+        po::value<float>(&settings.radius_min)->default_value(Simulation::DefaultSettings<vector_t>.radius_min),
         "Particle radii, whole number.")
       ("radius-max",
-        po::value<float>(&settings.radius_max)->default_value(Simulation::DefaultSettings.radius_max),
+        po::value<float>(&settings.radius_max)->default_value(Simulation::DefaultSettings<vector_t>.radius_max),
         "Particle radii, whole number.")
       ("color",
         po::value<std::vector<int>>()->multitoken(),
@@ -42,31 +44,31 @@ Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::
         po::value<std::vector<int>>()->multitoken(),
         "Requires --color, smooths one color to another.")
       ("display",
-        po::bool_switch(&settings.display_mode)->default_value(Simulation::DefaultSettings.display_mode),
+        po::bool_switch(&settings.display_mode)->default_value(Simulation::DefaultSettings<vector_t>.display_mode),
         "Zero velocity, just view colors.")
       ("delay",
-        po::value(&settings.delay)->default_value(Simulation::DefaultSettings.delay),
+        po::value(&settings.delay)->default_value(Simulation::DefaultSettings<vector_t>.delay),
         "Delay before we start running the simulation, in seconds.")
       ("no-full-screen",
         po::bool_switch()->default_value(false),
         "Disable default fullscreen.")
       ("no-gui",
-        po::bool_switch(&settings.no_gui)->default_value(Simulation::DefaultSettings.no_gui),
+        po::bool_switch(&settings.no_gui)->default_value(Simulation::DefaultSettings<vector_t>.no_gui),
         "Diable the GUI. Boring for users, great for debug.")
       ("trace",
         po::value<std::vector<size_t>>()->multitoken(),
         "Highlight these paricles and remove unrelated debug output.")
       ("extra-trace",
-        po::bool_switch(&settings.extra_trace)->default_value(Simulation::DefaultSettings.extra_trace),
+        po::bool_switch(&settings.extra_trace)->default_value(Simulation::DefaultSettings<vector_t>.extra_trace),
         "Print out full sim state after each iteration. This will be slow.")
       ("gravity",
-        po::value<float>(&settings.gravity)->default_value(Simulation::DefaultSettings.gravity),
+        po::value<float>(&settings.gravity)->default_value(Simulation::DefaultSettings<vector_t>.gravity),
         "Add gravity to the simulation.")
       ("gravity-angle",
-        po::value<float>(&settings.gravity_angle)->default_value(Simulation::DefaultSettings.gravity_angle),
+        po::value<float>(&settings.gravity_angle)->default_value(Simulation::DefaultSettings<vector_t>.gravity_angle),
         "Commit crimes against nature.")
       ("info",
-        po::bool_switch(&settings.info)->default_value(Simulation::DefaultSettings.info),
+        po::bool_switch(&settings.info)->default_value(Simulation::DefaultSettings<vector_t>.info),
         "Print out INFO level messages. System stats, etc.")
       ;
 

@@ -76,7 +76,7 @@ $(OBJ_DIR)/%.debug.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	$(CXX) $(CPPFLAGS) -c $< -o $@
 
 $(OBJ_DIR):
-	mkdir -p $@ $@/component $@/simulation $@/graphics $@/cli $@/physics $@/graphics
+	mkdir -p $@ $@/component $@/simulation $@/graphics $@/cli $@/physics $@/graphics $@/util $@/demo
 
 $(BIN_DIR):
 	mkdir -p $@

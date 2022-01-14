@@ -1,13 +1,13 @@
-#include "component.h"
-#include "context.h"
+#include "demo/demo.h"
 #include "window.h"
 
 #include <chrono>
 #include <cmath>
-#include <random>
 #include <thread>
 #include <time.h>
 #include <vector>
+
+namespace Demo {
 
 // for generating initial conditions of the simulation, we don't really mind this
 #pragma GCC diagnostic push
@@ -16,17 +16,23 @@
 
 namespace chrono = std::chrono;
 
-template<typename T>
-static void correct_overlap(std::vector<Component::Particle<T>>& particles, std::mt19937& gen);
+template<typename V>
+static void correct_overlap(std::vector<Component::Particle<V>>& particles, std::mt19937& gen);
 
-template<typename T>
-void set_initial_conditions(Simulation::SimulationContext<T>& sim, Simulation::SimSettings<T> settings) {
-  auto deg_to_rad = [](T angle) {
+template <typename V>
+static bool validate_free(const std::vector<Component::Particle<V>>& particles,
+                          typename V::vector_t radius, V pos);
+
+template<typename V>
+void set_initial_conditions(Simulation::SimulationContext<V>& sim, Simulation::SimSettings<typename V::vector_t> settings) {
+  typedef typename V::vector_t vector_t;
+
+  auto deg_to_rad = [](float angle) {
     return angle * M_PI / 180;
   };
 
   // TODO this should be more customizeable... but for now we just try to make this fit well on your monitor
-  auto boundaries = Graphics::get_window_size();
+  auto boundaries = Graphics::get_window_size<vector_t>();
   settings.x_width = std::get<0>(boundaries);
   settings.y_width = std::get<1>(boundaries);
   settings.z_width = std::get<2>(boundaries);
@@ -42,15 +48,15 @@ void set_initial_conditions(Simulation::SimulationContext<T>& sim, Simulation::S
   std::random_device rd;  // Will be used to obtain a seed for the RNG engine.
   std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
   std::uniform_real_distribution<float> vel_dist(0, static_cast<float>(settings.vmax));
-  std::uniform_real_distribution<float> mass_dist(settings.mass_min, settings.mass_min);
-  std::uniform_int_distribution<int> radius_dist(settings.radius_min, settings.radius_max);
+  std::uniform_real_distribution<float> mass_dist(static_cast<float>(settings.mass_min), static_cast<float>(settings.mass_min));
+  std::uniform_int_distribution<int> radius_dist(static_cast<float>(settings.radius_min), static_cast<float>(settings.radius_max));
   std::uniform_real_distribution<float> rad_dist(0, 2 * M_PI);
 
-  std::vector<Component::Particle<T>> particles;
+  std::vector<Component::Particle<V>> particles;
 
   for (size_t i = 0; i < settings.number_particles; i++) {
     auto v_mag = vel_dist(gen);
-    v_mag = (v_mag < static_cast<T>(settings.vmin)) ? static_cast<T>(settings.vmin) : v_mag;
+    v_mag = (v_mag < static_cast<float>(settings.vmin)) ? static_cast<float>(settings.vmin) : v_mag;
     auto vx = 0.f, vy = 0.f;
     // vectorwise adds up to vmax
     if (!settings.display_mode) {
@@ -65,7 +71,7 @@ void set_initial_conditions(Simulation::SimulationContext<T>& sim, Simulation::S
       }
     }
 
-    Component::Vector<T, float> velocity{static_cast<float>(vx), static_cast<float>(vy), static_cast<float>(0.f)};
+    Component::Vector<vector_t, float> velocity{static_cast<float>(vx), static_cast<float>(vy), static_cast<float>(0.f)};
 
     int px = ((-(settings.x_width / 2)) + (i % grid) * x_spacing + placement_buffer / 2) + x_spacing / 2;
     int py = ((settings.y_width / 2) - (i / grid) * y_spacing - placement_buffer / 2) - y_spacing / 2;
@@ -73,8 +79,8 @@ void set_initial_conditions(Simulation::SimulationContext<T>& sim, Simulation::S
     auto mass = mass_dist(gen);
     auto radius = radius_dist(gen);
 
-    Component::Vector<T, float> position{static_cast<float>(px), static_cast<float>(py), static_cast<float>(0.f)};
-    Component::Particle<T> particle(radius, mass, velocity, position);
+    Component::Vector<vector_t, float> position{static_cast<float>(px), static_cast<float>(py), static_cast<float>(0.f)};
+    Component::Particle<V> particle(radius, mass, velocity, position);
 
     particles.push_back(particle);
   }
@@ -87,20 +93,20 @@ void set_initial_conditions(Simulation::SimulationContext<T>& sim, Simulation::S
   }
 }
 
-template <typename T>
-bool validate_free(const std::vector<Component::Particle<T>>& particles,
-                          size_t radius, Component::Vector<T> pos) {
+template <typename V>
+static bool validate_free(const std::vector<Component::Particle<V>>& particles,
+                          typename V::vector_t radius, V pos) {
   for (const auto& p : particles) {
-    if ((p.get_position() - pos).magnitude < radius * Simulation::DefaultSettings<T>.overlap_detection) {
+    if ((p.get_position() - pos).magnitude < radius * Simulation::DefaultSettings<typename V::vector_t>.overlap_detection) {
       return false;
     }
   }
   return true;
 }
 
-template<typename T>
-void correct_overlap(std::vector<Component::Particle<T>>& particles, std::mt19937& gen) {
-  std::uniform_real_distribution<T> offset_dir(0, 2 * M_PI);
+template<typename V>
+void correct_overlap(std::vector<Component::Particle<V>>& particles, std::mt19937& gen) {
+  std::uniform_real_distribution<float> offset_dir(0, 2 * M_PI);
 
   bool user_warned = false;
   bool overlap_detected = false;
@@ -130,15 +136,16 @@ void correct_overlap(std::vector<Component::Particle<T>>& particles, std::mt1993
             // randomly project out from B
             auto dir = offset_dir(gen);
 
-            Component::Vector<T> offset{std::cos(dir),
-                                        std::sin(dir),
-                                        0};
+            V offset{std::cos(dir),
+                     std::sin(dir),
+                     0};
+
             // proposed new position
             auto new_pos = stayer.get_position() + 1.1 * offset.collinear_vector(a.get_radius() + b.get_radius());
             if (validate_free(particles, mover.get_radius(), new_pos)) {
               found_free_space = true;
               auto uid = mover.uid;
-              mover = Component::Particle<T>(mover.get_radius(), mover.get_mass(), mover.get_velocity(), new_pos);
+              mover = Component::Particle<V>(mover.get_radius(), mover.get_mass(), mover.get_velocity(), new_pos);
               mover.uid.latch(uid.get());
             }
           } while(!found_free_space);
@@ -147,3 +154,16 @@ void correct_overlap(std::vector<Component::Particle<T>>& particles, std::mt1993
     }
   }while(overlap_detected);
 }
+
+
+template<>
+void set_initial_conditions(Simulation::SimulationContext<Component::Vector<float>>&,
+  Simulation::SimSettings<float>);
+template<>
+void set_initial_conditions(Simulation::SimulationContext<Component::Vector<double>>&,
+  Simulation::SimSettings<double>);
+template<>
+void set_initial_conditions(Simulation::SimulationContext<Component::Vector<Util::FixedPoint>>&,
+  Simulation::SimSettings<Util::FixedPoint>);
+
+} // Demo
