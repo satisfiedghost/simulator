@@ -15,18 +15,18 @@ using std::abs;
 
 // T is the underlying type
 // U is an optional type which can be coverted to T
-template<typename T, typename U = T>
+template<typename T>
 struct Vector {
 
-  // Undderlying type for the vector
+  // Underlying type for the vector
   typedef T vector_t;
 
   Vector() {};
 
-  Vector<T, U>(U x, U y, U z)
-        : m_x(static_cast<T>(x))
-        , m_y(static_cast<T>(y))
-        , m_z(static_cast<T>(z))
+  Vector(T x, T y, T z)
+        : m_x(x)
+        , m_y(y)
+        , m_z(z)
         {
           magnitude = sqrt(pow(m_x, static_cast<T>(2)) +
                            pow(m_y, static_cast<T>(2)) +
@@ -59,25 +59,13 @@ struct Vector {
   const T& two() const {return m_y;};
   const T& three() const {return m_z;};
 
-  // Vector<T, U> is implicitly convertible to Vector<T>
-  operator Vector<T>() { return Vector<T>(m_x, m_y, m_z); }
-
   T m_x;
   T m_y;
   T m_z;
   T magnitude;
 };
 
-// specialized int64 ctor
-template <>
-Vector<int64_t, double>::Vector(double x, double y, double z) {
-  m_x = static_cast<int64_t>(x * 10'000UL);
-  m_y = static_cast<int64_t>(y * 10'000UL);
-  m_z = static_cast<int64_t>(z * 10'000UL);
-}
-
-
-// todo should these be available as a member function to avoid copy overhead?
+// TODO provide these as member functions
 
 // Vector * Scalar
 template<typename T>

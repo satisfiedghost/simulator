@@ -34,6 +34,7 @@ FixedPoint FixedPoint::operator*(const FixedPoint& other) const {
     // we will however lose some precision moving back to the fixed scale
     int64_t result = value * other.value;
     result /= DEFAULT_SCALING_FACTOR;
+    pre_check(result);
 
     return FixedPoint(result, unchecked);
 }
@@ -50,6 +51,11 @@ FixedPoint FixedPoint::operator/(const FixedPoint& other) const {
 
 FixedPoint FixedPoint::operator-() const {
   return FixedPoint(-1) * (*this);
+}
+
+FixedPoint& FixedPoint::operator+=(const FixedPoint& other) {
+  value = pre_check(value + other.value);
+  return *this;
 }
 
 FixedPoint pow(const FixedPoint& i, const FixedPoint& pow) {
@@ -118,8 +124,15 @@ std::ostream& operator<<(std::ostream& os, const FixedPoint& i) {
   auto whole = i.value / i.scalar;
   auto mantissa = i.value % i.scalar;
 
-  os << ( (whole < 0) ? "-" : "" ) << std::abs(whole) << "." << std::setw(4) << std::setfill('0') << std::abs(mantissa);
+  os << ( (whole < 0) ? "-" : "" ) << std::abs(whole) << "." << std::setw(FixedPoint::PRECISION) << std::setfill('0') << std::abs(mantissa);
   return os;
+}
+
+std::istream& operator>>(std::istream& is, FixedPoint& fp) {
+  double arg;
+  is >> arg;
+  fp = FixedPoint(arg);
+  return is;
 }
 
 } // Util

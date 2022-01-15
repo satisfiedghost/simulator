@@ -1,12 +1,14 @@
 #include "cli.h"
+#include "component.h"
+#include "util/fixed_point.h"
 
 #include <iostream>
 
 namespace Cli {
 
-template <typename V>
-Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::SimSettings<typename V::vector_t>& settings) {
-  typedef typename V::vector_t vector_t;
+template <typename Vt>
+Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::SimSettings<Vt>& settings) {
+  typedef Vt vector_t;
   po::options_description desc("Allowed options");
   desc.add_options()
       ("help", "Display this help message.")
@@ -23,19 +25,19 @@ Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::
         po::value<int>(),
         "Start all particles at this velocity. Overrides --vmin and --vmax.")
       ("mass-min",
-        po::value<float>(&settings.mass_min)->default_value(Simulation::DefaultSettings<vector_t>.mass_min),
+        po::value<vector_t>(&settings.mass_min)->default_value(Simulation::DefaultSettings<vector_t>.mass_min),
         "Minimum mass allowed for a particle")
       ("mass-max",
-        po::value<float>(&settings.mass_max)->default_value(Simulation::DefaultSettings<vector_t>.mass_max),
+        po::value<vector_t>(&settings.mass_max)->default_value(Simulation::DefaultSettings<vector_t>.mass_max),
         "Maximum mass allowed for a particle")
       ("angle",
         po::value<float>(&settings.angle),
         "Start all particles travelling at this angle (in degrees).")
       ("radius-min",
-        po::value<float>(&settings.radius_min)->default_value(Simulation::DefaultSettings<vector_t>.radius_min),
+        po::value<vector_t>(&settings.radius_min)->default_value(Simulation::DefaultSettings<vector_t>.radius_min),
         "Particle radii, whole number.")
       ("radius-max",
-        po::value<float>(&settings.radius_max)->default_value(Simulation::DefaultSettings<vector_t>.radius_max),
+        po::value<vector_t>(&settings.radius_max)->default_value(Simulation::DefaultSettings<vector_t>.radius_max),
         "Particle radii, whole number.")
       ("color",
         po::value<std::vector<int>>()->multitoken(),
@@ -62,7 +64,7 @@ Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::
         po::bool_switch(&settings.extra_trace)->default_value(Simulation::DefaultSettings<vector_t>.extra_trace),
         "Print out full sim state after each iteration. This will be slow.")
       ("gravity",
-        po::value<float>(&settings.gravity)->default_value(Simulation::DefaultSettings<vector_t>.gravity),
+        po::value<vector_t>(&settings.gravity)->default_value(Simulation::DefaultSettings<vector_t>.gravity),
         "Add gravity to the simulation.")
       ("gravity-angle",
         po::value<float>(&settings.gravity_angle)->default_value(Simulation::DefaultSettings<vector_t>.gravity_angle),
@@ -99,7 +101,7 @@ Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::
     }
 
     if (vm.count("mass-max") && vm.count("mass-min")) {
-      if (vm["mass-max"].as<float>() < vm["mass-min"].as<float>()) {
+      if (vm["mass-max"].as<vector_t>() < vm["mass-min"].as<vector_t>()) {
         std::cout << "See --help, Must have mass-max > mass-min." << std::endl;
         return Status::Failure;
       }
@@ -159,5 +161,17 @@ Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::
   }
   return Status::Success;
 }
+
+template
+Status parse_cli_args(int argc, char** argv, po::variables_map& vm,
+  Simulation::SimSettings<float>& settings);
+
+template
+Status parse_cli_args(int argc, char** argv, po::variables_map& vm,
+  Simulation::SimSettings<double>& settings);
+
+template
+Status parse_cli_args(int argc, char** argv, po::variables_map& vm,
+  Simulation::SimSettings<Util::FixedPoint>& settings);
 
 } // namespace Cli

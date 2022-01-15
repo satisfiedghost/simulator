@@ -10,7 +10,7 @@ namespace Cli {
 // Status::Success if options are valid
 // Status::Failure if not
 // Status::None to display help and exit normally
-template <typename V>
-Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::SimSettings<typename V::vector_t>& settings);
+template <typename Vt>
+Status parse_cli_args(int argc, char** argv, po::variables_map& vm, Simulation::SimSettings<Vt>& settings);
 
 } // namespace Cli

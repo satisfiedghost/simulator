@@ -77,7 +77,7 @@
 // don't print this out on our internal recursive call
 // we also need to recalculate KE since it might've changed as a result of correction
 #define POST_COLLISION_REPORT \
-  const auto k_delta_final = std::abs((ka_before + kb_before) - (a.get_kinetic_energy() + b.get_kinetic_energy())); \
+  const auto k_delta_final = abs((ka_before + kb_before) - (a.get_kinetic_energy() + b.get_kinetic_energy())); \
   const auto ka_after_final = a.get_kinetic_energy(); \
   const auto kb_after_final = b.get_kinetic_energy(); \
   if (Simulation::trace_present(m_settings.get().trace, a.uid.get()) or \
@@ -125,7 +125,7 @@
 
 #define SYSTEM_REPORT \
   { \
-  T total_energy = 0; \
+  vector_t total_energy = 0; \
   static size_t last_frame = 0; \
   if (m_step - last_frame > TICKS_PER_SECOND or m_settings.get().extra_trace) { \
     last_frame = m_step; \

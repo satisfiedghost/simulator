@@ -74,6 +74,7 @@ target_link_directories(
 
 target_link_libraries(
   test_fixed
+  ${CMAKE_CURRENT_SOURCE_DIR}/../obj/util/fixed_point.o
   gtest_main
 )
 

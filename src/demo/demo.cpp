@@ -71,7 +71,7 @@ void set_initial_conditions(Simulation::SimulationContext<V>& sim, Simulation::S
       }
     }
 
-    Component::Vector<vector_t, float> velocity{static_cast<float>(vx), static_cast<float>(vy), static_cast<float>(0.f)};
+    Component::Vector<vector_t> velocity{vector_t(vx), vector_t(vy), vector_t(0.f)};
 
     int px = ((-(settings.x_width / 2)) + (i % grid) * x_spacing + placement_buffer / 2) + x_spacing / 2;
     int py = ((settings.y_width / 2) - (i / grid) * y_spacing - placement_buffer / 2) - y_spacing / 2;
@@ -79,7 +79,7 @@ void set_initial_conditions(Simulation::SimulationContext<V>& sim, Simulation::S
     auto mass = mass_dist(gen);
     auto radius = radius_dist(gen);
 
-    Component::Vector<vector_t, float> position{static_cast<float>(px), static_cast<float>(py), static_cast<float>(0.f)};
+    Component::Vector<vector_t> position{vector_t(px), vector_t(py), vector_t(0.f)};
     Component::Particle<V> particle(radius, mass, velocity, position);
 
     particles.push_back(particle);
@@ -156,14 +156,16 @@ void correct_overlap(std::vector<Component::Particle<V>>& particles, std::mt1993
 }
 
 
-template<>
+template
 void set_initial_conditions(Simulation::SimulationContext<Component::Vector<float>>&,
-  Simulation::SimSettings<float>);
-template<>
+  Simulation::SimSettings<typename Component::Vector<float>::vector_t>);
+
+template
 void set_initial_conditions(Simulation::SimulationContext<Component::Vector<double>>&,
-  Simulation::SimSettings<double>);
-template<>
+  Simulation::SimSettings<typename Component::Vector<double>::vector_t>);
+
+template
 void set_initial_conditions(Simulation::SimulationContext<Component::Vector<Util::FixedPoint>>&,
-  Simulation::SimSettings<Util::FixedPoint>);
+  Simulation::SimSettings<typename Component::Vector<Util::FixedPoint>::vector_t>);
 
 } // Demo

@@ -30,9 +30,14 @@ public:
   // TODO the scaling factor should be a power of 2. This allows us to scale with shifting operations instead of
   // multiplication. Orders of magnitude more efficient, but let's make something human-readable for now
   static constexpr int32_t DEFAULT_SCALING_FACTOR = 10'000UL;
+  static constexpr size_t PRECISION = std::log(DEFAULT_SCALING_FACTOR) / std::log(10);
+
   static constexpr int64_t MAX = std::numeric_limits<int32_t>::max();
-  static constexpr int32_t MAX_PRESCALE = std::numeric_limits<int32_t>::max() / DEFAULT_SCALING_FACTOR;
   static constexpr int64_t MIN = std::numeric_limits<int32_t>::min();
+
+  // Since squaring numbers greater than this would result in a signed 64-bit overflow, this is the
+  // maximum value a non-intermediate number is allowed to have.
+  static constexpr int32_t MAX_PRESCALE = std::numeric_limits<int32_t>::max() / DEFAULT_SCALING_FACTOR;
   static constexpr int32_t MIN_PRESCALE = std::numeric_limits<int32_t>::min() / DEFAULT_SCALING_FACTOR;
 
   FixedPoint()
@@ -77,6 +82,8 @@ public:
 
   friend std::ostream& operator<<(std::ostream&, const FixedPoint&);
 
+  friend std::istream& operator>>(std::istream&, FixedPoint&);
+
   // Analogues for the <cmath> functions we need access to
   friend FixedPoint pow(const FixedPoint&, const FixedPoint&);
 
@@ -108,6 +115,8 @@ public:
   bool operator==(const FixedPoint&) const;
   // Not equal
   bool operator!=(const FixedPoint&) const;
+  // Add to this
+  FixedPoint& operator+=(const FixedPoint&);
   // Unary -
   FixedPoint operator-() const;
 
@@ -146,9 +155,9 @@ private:
 
   int64_t pre_scale(int64_t whole, int64_t mantissa) const {
     if (whole > MAX_PRESCALE) {
-      throw std::overflow_error(string_format("Int64 Whole/Mantissa Prescale: Overflow creating FixedPoint with %d", value));
+      throw std::overflow_error(string_format("Int64 Whole/Mantissa Prescale: Overflow creating FixedPoint with %ld", value));
     } else if (value < MIN_PRESCALE) {
-      throw std::underflow_error(string_format("Int64 Whole/Mantissa Prescale: Underflow creating FixedPoint with %d", value));
+      throw std::underflow_error(string_format("Int64 Whole/Mantissa Prescale: Underflow creating FixedPoint with %ld", value));
     }
 
     // this is a bit painful... but switching to scaling with 2^n should allow a clever bitmath
@@ -186,9 +195,9 @@ private:
 
   int64_t pre_check(int64_t value) const {
     if (value > MAX) {
-      throw std::overflow_error(string_format("Int64 PreCheck: Overflow creating FixedPoint with %d", value));
+      throw std::overflow_error(string_format("Int64 PreCheck: Overflow creating FixedPoint with %ld", value));
     } else if (value < MIN) {
-      throw std::underflow_error(string_format("Int64 PreCheck: Underflow creating FixedPoint with %d", value));
+      throw std::underflow_error(string_format("Int64 PreCheck: Underflow creating FixedPoint with %ld", value));
     }
     return value;
   }

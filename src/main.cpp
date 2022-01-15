@@ -3,13 +3,14 @@
 #include "window.h"
 
 typedef Component::Vector<Util::FixedPoint> sim_t;
+//typedef Component::Vector<double> sim_t;
 
 int main(int argc, char** argv) {
   Simulation::SimulationContext<sim_t> sim;
   Simulation::SimSettings<typename sim_t::vector_t> settings = Simulation::DefaultSettings<typename sim_t::vector_t>;
 
   po::variables_map vm;
-  Status s = Cli::parse_cli_args<sim_t>(argc, argv, vm, settings);
+  Status s = Cli::parse_cli_args<typename sim_t::vector_t>(argc, argv, vm, settings);
 
   switch(s) {
     case Status::None:
@@ -21,7 +22,7 @@ int main(int argc, char** argv) {
       break;
   }
 
-  Demo::set_initial_conditions(sim, settings);
+  Demo::set_initial_conditions<sim_t>(sim, settings);
   Simulation::PhysicsContext<sim_t> physics_context(settings);
 
   sim.set_physics_context(physics_context);

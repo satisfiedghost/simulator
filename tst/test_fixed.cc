@@ -2,10 +2,14 @@
 #include <gtest/gtest.h>
 
 using Util::FixedPoint;
+// Allows us to use ADL to defer to the correct sqrt/pow impls
+using std::sqrt;
+using std::pow;
+using std::abs;
 
 class FixedTest : public ::testing::Test {
-static constexpr double PRECISION = 1.f / static_cast<double>(FixedPoint::DEFAULT_SCALING_FACTOR);
 public:
+static constexpr double PRECISION = 1.f / static_cast<double>(FixedPoint::DEFAULT_SCALING_FACTOR);
 void addition_test(int64_t a, int64_t b) {
   FixedPoint one(a);
   FixedPoint two(b);
@@ -46,12 +50,12 @@ void division_test(int64_t a, int64_t b) {
   EXPECT_NEAR(c.as_double(), expected, PRECISION);
 }
 
-void pow_test(int64_t a, int32_t pow) {
+void pow_test(int64_t a, int32_t power) {
   FixedPoint i(a);
-  FixedPoint p(pow);
-  double expected = std::pow(a, pow);
+  FixedPoint p(power);
+  double expected = std::pow(a, power);
 
-  FixedPoint r = Util::pow(a, p);
+  FixedPoint r = pow(a, p);
 
   EXPECT_NEAR(r.as_double(), expected, PRECISION);
 }
@@ -60,7 +64,7 @@ void square_root_test(double a) {
   FixedPoint i(a);
   double expected = std::sqrt(a);
 
-  FixedPoint p = Util::sqrt(a);
+  FixedPoint p = sqrt(a);
 
   EXPECT_NEAR(p.as_double(), expected, PRECISION);
 }
@@ -132,5 +136,20 @@ TEST_F(FixedTest, BasicSquareRoot) {
     square_root_test(5 * i);
     square_root_test(7.5 * i);
     square_root_test(10 * i);
+  }
+}
+
+TEST_F(FixedTest, SquareLarge) {
+  double large = 673;
+  pow_test(large, 2);
+}
+
+TEST_F(FixedTest, MultiplyLarge) {
+  for (double d = 0; d < 700; d++) {
+    std::cout << d << std::endl;
+    auto expected = d * d;
+    FixedPoint a(d);
+    a = a * a;
+    EXPECT_NEAR(a.as_double(), expected, FixedTest::PRECISION);
   }
 }

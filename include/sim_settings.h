@@ -17,10 +17,10 @@ enum class ScreenMode {
 // but you've gotta start somewhere
 template<typename VT>
 struct SimSettings {
-  VT radius_min;       ///<< radius of all particles
-  VT radius_max;       ///<< radius of all particles
-  VT mass_min;               ///<< the minimum mass a particle can have
-  VT mass_max;               ///<< the maximum mass a particle can have
+  VT radius_min;                ///<< radius of all particles
+  VT radius_max;                ///<< radius of all particles
+  VT mass_min;                  ///<< the minimum mass a particle can have
+  VT mass_max;                  ///<< the maximum mass a particle can have
   size_t number_particles;      ///<< total particles in the system
   int vmin;                     ///<< magnitude of maximum starting velocity of all particles
   int vmax;                     ///<< magnitude of maximum starting velocity of all particles
@@ -38,7 +38,7 @@ struct SimSettings {
   bool no_gui;                  ///<< set to run the simulator headless
   std::vector<size_t> trace;    ///<< elide debug information not related to these particles
   bool extra_trace;             ///<< print out state of everyone else in the trace, when any traced event occurs
-  VT gravity;                    ///<< I don't think you understand the gravity of the situation
+  VT gravity;                   ///<< I don't think you understand the gravity of the situation
   float gravity_angle;          ///<< I don't think you understand the gravity of the situation
   bool info;                    ///<< Print out INFO level messages.
 

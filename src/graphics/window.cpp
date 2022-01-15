@@ -156,5 +156,9 @@ template void SimulationWindowThread(const Simulation::SimulationContext<Compone
 template void SimulationWindowThread(const Simulation::SimulationContext<Component::Vector<double>>&, Simulation::SimSettings<double>);
 template void SimulationWindowThread(const Simulation::SimulationContext<Component::Vector<Util::FixedPoint>>&, Simulation::SimSettings<Util::FixedPoint>);
 
+template std::tuple<size_t, size_t, size_t> get_window_size<float>();
+template std::tuple<size_t, size_t, size_t> get_window_size<double>();
+template std::tuple<size_t, size_t, size_t> get_window_size<Util::FixedPoint>();
+
 } // namespace Graphics
 #pragma GCC diagnostic pop
