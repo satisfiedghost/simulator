@@ -1,15 +1,14 @@
 #include "util/fixed_point.h"
+#include "util/range.h"
 
 namespace Util {
 
 FixedPoint FixedPoint::operator+(const FixedPoint& other) const {
-  int64_t result = pre_check(value + other.value);
-  return FixedPoint(result, unchecked);
+  return FixedPoint(pre_check_add(value, other.value), unchecked);
 }
 
 FixedPoint FixedPoint::operator-(const FixedPoint& other) const {
-  int64_t result = pre_check(value - other.value);
-  return FixedPoint(result, unchecked);
+  return FixedPoint(pre_check_sub(value, other.value), unchecked);
 }
 
 bool FixedPoint::operator<(const FixedPoint& other) const {
@@ -29,14 +28,8 @@ bool FixedPoint::operator>=(const FixedPoint& other) const {
 }
 
 FixedPoint FixedPoint::operator*(const FixedPoint& other) const {
-    // the intermediate result of this operation might be much larger than our allowed representation.
-    // that is fine! it is still guaranteed to fit in an int64_t due to our enforcement of a MAX/MIN
-    // we will however lose some precision moving back to the fixed scale
-    int64_t result = value * other.value;
-    result /= DEFAULT_SCALING_FACTOR;
-    pre_check(result);
-
-    return FixedPoint(result, unchecked);
+  // multiplying these numbers creates a DEFAULT_SCALING_FACTOR ^ 2 number, remember to scale it back down
+  return FixedPoint(pre_check_mul(value, other.value) / DEFAULT_SCALING_FACTOR, unchecked);
 }
 
 FixedPoint FixedPoint::operator/(const FixedPoint& other) const {
@@ -44,7 +37,7 @@ FixedPoint FixedPoint::operator/(const FixedPoint& other) const {
     // 1.5 / 2, we want 0.75. Internally, 1500 / 2000 = 0. We get around this by scaling the dividend up
     // (using 10k as an example factor) as an intermediate step. Then (1500 * 10'000) / 2000 = 7500. With
     // a 10k scaling interpretation, this is 0.75
-    int64_t dividend = value * DEFAULT_SCALING_FACTOR;
+    int64_t dividend = pre_check_mul(value, DEFAULT_SCALING_FACTOR);
     int64_t result = dividend / other.value;
     return FixedPoint(result, unchecked);
 }
@@ -54,7 +47,7 @@ FixedPoint FixedPoint::operator-() const {
 }
 
 FixedPoint& FixedPoint::operator+=(const FixedPoint& other) {
-  value = pre_check(value + other.value);
+  value = pre_check_add(value, other.value);
   return *this;
 }
 

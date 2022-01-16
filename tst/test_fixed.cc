@@ -146,7 +146,6 @@ TEST_F(FixedTest, SquareLarge) {
 
 TEST_F(FixedTest, MultiplyLarge) {
   for (double d = 0; d < 700; d++) {
-    std::cout << d << std::endl;
     auto expected = d * d;
     FixedPoint a(d);
     a = a * a;

@@ -25,20 +25,19 @@ std::string string_format( const std::string& format, Args ... args ) {
 
 class FixedPoint {
 public:
-  // if we're squaring numbers... then going larger than sqrt(int64_t::max) will cause overflow
-  // TODO technically this should be additionally predicated on our # of dimensions, but not worrying about that for now
   // TODO the scaling factor should be a power of 2. This allows us to scale with shifting operations instead of
-  // multiplication. Orders of magnitude more efficient, but let's make something human-readable for now
-  static constexpr int32_t DEFAULT_SCALING_FACTOR = 10'000UL;
+  // multiplication. More efficient, but let's make something human-readable for now
+  static constexpr int64_t DEFAULT_SCALING_FACTOR = 10'000UL;
   static constexpr size_t PRECISION = std::log(DEFAULT_SCALING_FACTOR) / std::log(10);
 
-  static constexpr int64_t MAX = std::numeric_limits<int32_t>::max();
-  static constexpr int64_t MIN = std::numeric_limits<int32_t>::min();
+  // We use these to check if operations would cause over/under flow
+  static constexpr int64_t MAX = std::numeric_limits<int64_t>::max();
+  static constexpr int64_t MIN = std::numeric_limits<int64_t>::min();
 
-  // Since squaring numbers greater than this would result in a signed 64-bit overflow, this is the
-  // maximum value a non-intermediate number is allowed to have.
-  static constexpr int32_t MAX_PRESCALE = std::numeric_limits<int32_t>::max() / DEFAULT_SCALING_FACTOR;
-  static constexpr int32_t MIN_PRESCALE = std::numeric_limits<int32_t>::min() / DEFAULT_SCALING_FACTOR;
+  // Since numbers are by default multiplied by our scaling factor... we can't create one with
+  // a magnitude greater than MAX or MAX divided by the scaling factor
+  static constexpr int64_t MAX_PRESCALE = MAX / DEFAULT_SCALING_FACTOR;
+  static constexpr int64_t MIN_PRESCALE = MIN / DEFAULT_SCALING_FACTOR;
 
   FixedPoint()
     : value(0)
@@ -133,11 +132,9 @@ private:
   int32_t scalar;
   // pre-check input values
   int64_t pre_scale(int64_t value) const {
-    if (value > 0 and (value * DEFAULT_SCALING_FACTOR > MAX or
-         ((value * DEFAULT_SCALING_FACTOR < 0)))) {
+    if (value > MAX_PRESCALE) {
         throw std::overflow_error(string_format("Int64 Prescale: Overflow creating FixedPoint with %d", value));
-    } else if (value < 0 and (value * DEFAULT_SCALING_FACTOR < MIN or
-         ((value * DEFAULT_SCALING_FACTOR > 0)))) {
+    } else if (value < MIN_PRESCALE) {
         throw std::underflow_error(string_format("Int64 Prescale: Underflow creating FixedPoint with %d", value));
     }
 
@@ -145,11 +142,7 @@ private:
   }
 
   int64_t pre_scale(int32_t value) const {
-    if (value > 0 and value > MAX_PRESCALE) {
-      throw std::overflow_error(string_format("Int32 Prescale: Overflow creating FixedPoint with %d", value));
-    } else if (value < 0 and value < MIN_PRESCALE) {
-      throw std::underflow_error(string_format("Int32 Prescale: Underflow creating FixedPoint with %d", value));
-    }
+    // we know this fits comfortably
     return value * DEFAULT_SCALING_FACTOR;
   }
 
@@ -193,13 +186,36 @@ private:
     return result;
   }
 
-  int64_t pre_check(int64_t value) const {
-    if (value > MAX) {
-      throw std::overflow_error(string_format("Int64 PreCheck: Overflow creating FixedPoint with %ld", value));
-    } else if (value < MIN) {
-      throw std::underflow_error(string_format("Int64 PreCheck: Underflow creating FixedPoint with %ld", value));
+  int64_t pre_check_add(int64_t first, int64_t second) const {
+    if ((second > 0) and (first > MAX - second)) {
+      throw std::overflow_error(string_format("Int64 PreCheckAdd: Overflow: %ld + %ld", first, second));
+    } else if ((second < 0) and (first < MAX - second)) {
+      throw std::underflow_error(string_format("Int64 PreCheckAdd: Underflow: %ld + %ld", first, second));
     }
-    return value;
+    return first + second;
+  }
+
+  int64_t pre_check_sub(int64_t first, int64_t second) const {
+    if ((second < 0) and (first > MAX + second)) {
+      throw std::overflow_error(string_format("Int64 PreCheckSub: Overflow: %ld - %ld", first, second));
+    } else if ((second > 0) and (first < MIN + second)) {
+      throw std::underflow_error(string_format("Int64 PreCheckSub: Underflow: %ld - %ld", first, second));
+    }
+    return first - second;
+  }
+
+  int64_t pre_check_mul(int64_t first, int64_t second) const {
+    if (first == 0 or second == 0) {
+      return 0;
+    }
+    // general case
+    if (first > MAX / std::labs(second)) {
+      throw std::overflow_error(string_format("Int64 PreCheckMul: Overflow: %ld * %ld", first, second));
+    } else if (first < MIN / std::labs(second)) {
+      throw std::underflow_error(string_format("Int64 PreCheckMul: Underflow: %ld * %ld", first, second));
+    }
+
+    return first * second;
   }
 
   // Construct an FixedPoint with no scaling or pre-check
