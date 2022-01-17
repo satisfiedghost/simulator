@@ -77,9 +77,9 @@
 // don't print this out on our internal recursive call
 // we also need to recalculate KE since it might've changed as a result of correction
 #define POST_COLLISION_REPORT \
-  const auto k_delta_final = abs((ka_before + kb_before) - (a.get_kinetic_energy() + b.get_kinetic_energy())); \
-  const auto ka_after_final = a.get_kinetic_energy(); \
-  const auto kb_after_final = b.get_kinetic_energy(); \
+  const auto k_delta_final = abs((ka_before + kb_before) - (a.kinetic_energy() + b.kinetic_energy())); \
+  const auto ka_after_final = a.kinetic_energy(); \
+  const auto kb_after_final = b.kinetic_energy(); \
   if (Simulation::trace_present(m_settings.get().trace, a.uid.get()) or \
       Simulation::trace_present(m_settings.get().trace, b.uid.get())) { \
     std::cout << "> Particle Status Post-Collision: " << std::endl << std::endl; \
@@ -139,7 +139,7 @@
       if (Simulation::trace_present(m_settings.get().trace, p.uid.get())) { \
         std::cout << p << std::endl; \
         std::cout << "----------------------------------------------------" << std::endl; \
-        total_energy += p.get_kinetic_energy(); \
+        total_energy += p.kinetic_energy(); \
       } \
     } \
     std::cout << "Total System KE: " << total_energy << std::endl; \

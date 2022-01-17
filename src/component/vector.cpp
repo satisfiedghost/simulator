@@ -5,7 +5,7 @@ namespace Component {
 
 template<typename T>
 Vector<T> Vector<T>::unit_vector() const {
-  return (*this) / this->magnitude;
+  return (*this) / const_cast<Vector<T>*>(this)->magnitude();
 }
 
 template<typename T>
@@ -25,14 +25,24 @@ T Vector<T>::sum() const {
 }
 
 template<typename T>
-Vector<T> Vector<T>::collinear_vector(T magnitude) const {
-  T scalar = magnitude / this->magnitude;
+Vector<T> Vector<T>::collinear_vector(T mag) const {
+  T scalar = mag / const_cast<Vector<T>*>(this)->magnitude();
   return scalar * (*this);
 }
 
+template<typename T>
+const T& Vector<T>::magnitude() {
+  if (!this->is_mag_valid) {
+    this->m_magnitude = sqrt(pow(m_x, static_cast<T>(2)) +
+                             pow(m_y, static_cast<T>(2)) +
+                             pow(m_z, static_cast<T>(2)));
+    this->is_mag_valid = true;
+  }
+  return m_magnitude;
+}
 
-template struct Vector<float>;
-template struct Vector<double>;
-template struct Vector<Util::FixedPoint>;
+template class Vector<float>;
+template class Vector<double>;
+template class Vector<Util::FixedPoint>;
 
 } // namespace Simulation

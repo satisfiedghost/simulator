@@ -3,9 +3,9 @@ namespace Component {
 // todo should these be available as a member function to avoid copy overhead?
 template<typename T>
 Vector<T> operator*(const Vector<T>& v, const T s) {
-  return Vector<T>(v.m_x * s,
-                   v.m_y * s,
-                   v.m_z * s);
+  return Vector<T>(v.x() * s,
+                   v.y() * s,
+                   v.z() * s);
 }
 
 template<typename T>
@@ -15,32 +15,32 @@ Vector<T> operator*(const T s, const Vector<T>& v) {
 
 template<typename T>
 Vector<T> operator/(const Vector<T>& v, const T s) {
-  return Vector<T>(v.m_x / s,
-                   v.m_y / s,
-                   v.m_z / s);
+  return Vector<T>(v.x() / s,
+                   v.y() / s,
+                   v.z() / s);
 }
 
 // also should probably make these available as members
 template<typename T>
 Vector<T> operator+(const Vector<T>& first, const Vector<T>& second) {
-  return Vector<T>(first.m_x + second.m_x,
-                   first.m_y + second.m_y,
-                   first.m_z + second.m_z);
+  return Vector<T>(first.x() + second.x(),
+                   first.y() + second.y(),
+                   first.z() + second.z());
 }
 
 template<typename T>
 Vector<T> operator-(const Vector<T>& first, const Vector<T>& second) {
-  return Vector<T>(first.m_x - second.m_x,
-                   first.m_y - second.m_y,
-                   first.m_z - second.m_z);
+  return Vector<T>(first.x() - second.x(),
+                   first.y() - second.y(),
+                   first.z() - second.z());
 }
 
 // dot product
 template<typename T>
 T operator^(const Vector<T>& first, const Vector<T>& second) {
-  return first.m_x * second.m_x +
-         first.m_y * second.m_y +
-         first.m_z * second.m_z;
+  return first.x() * second.x() +
+         first.y() * second.y() +
+         first.z() * second.z();
 }
 
 // cross product
@@ -56,15 +56,16 @@ T operator%(const Vector<T>& first, const Vector<T>& second) {
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const Vector<T>& v) {
-  os << "{" << v.m_x << " : " << v.m_y << " : " << v.m_z << " | " << v.magnitude << "}";
+  // Note: printing will force calculation of all on-demand members
+  os << "{ " << v.x() << " : " << v.y() << " : " << v.z() << " | " << v.m_magnitude() << " }";
   return os;
 }
 
 template<typename T, typename S>
 Vector<T> operator*(const Vector<T>& v, const S s) {
-  return Vector<T>(v.m_x * static_cast<T>(s),
-                   v.m_y * static_cast<T>(s),
-                   v.m_z * static_cast<T>(s));
+  return Vector<T>(v.x() * static_cast<T>(s),
+                   v.y() * static_cast<T>(s),
+                   v.z() * static_cast<T>(s));
 }
 
 template<typename T, typename S>

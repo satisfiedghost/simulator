@@ -13,7 +13,7 @@ namespace Util {
 
 typedef __int128_t int128_t;
 
-static_assert(sizeof(int128_t) == 16);
+static_assert(sizeof(int128_t) == 16, "Your architecture may not support 128bit ints, 64 bit support may be added in the future");
 // taken from https://stackoverflow.com/questions/2342162/stdstring-formatting-like-sprintf
 // under CC0 license
 template<typename ... Args>
@@ -33,7 +33,6 @@ public:
   // TODO the scaling factor should be a power of 2. This allows us to scale with shifting operations instead of
   // multiplication. More efficient, but let's make something human-readable for now
   static constexpr int64_t DEFAULT_SCALING_FACTOR = 10'000'000ULL;
-  static constexpr size_t PRECISION = static_cast<size_t>(std::log(DEFAULT_SCALING_FACTOR) / std::log(10));
 
   static const __uint128_t UINT128_MAX =__uint128_t(__int128_t(-1L));
   static const __int128_t MAX = UINT128_MAX >> 1;
@@ -192,5 +191,25 @@ static const FixedPoint EPSILON = FixedPoint(1) / FixedPoint::DEFAULT_SCALING_FA
 
 std::ostream& operator<<(std::ostream& os, const __int128_t i);
 std::ostream& operator<<(std::ostream& os, const FixedPoint& i);
+
+
+constexpr size_t calc_precision() {
+  size_t s = 0;
+  int64_t sf = FixedPoint::DEFAULT_SCALING_FACTOR;
+
+  while(sf > 1) {
+    sf /= 10;
+    s++;
+  }
+
+  return s;
+}
+
+// Annoyingly, this line used to be the below (and inside the class above)
+// static constexpr size_t PRECISION = static_cast<size_t>(std::log(DEFAULT_SCALING_FACTOR) / std::log(10));
+// gcc, despite not being to the letter of the standard, allows evaluation of std::log as constexpr. clang more precisely
+// conforms to the standard and refuses to do this. So instead, we have to manually calculate this.
+constexpr size_t PRECISION = calc_precision();
+
 
 } // Util
