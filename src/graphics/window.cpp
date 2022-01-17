@@ -61,10 +61,10 @@ void SimulationWindowThread(const Simulation::SimulationContext<V>& sim,
   auto& sim_particles = sim.get_particles();
 
   for (const auto& p : sim_particles) {
-    sf::CircleShape tshape(static_cast<float>(p.get_radius()));
+    sf::CircleShape tshape(static_cast<float>(p.radius()));
     draw_particles.push_back({tshape,
-                              (desktop_mode.width / 2) - static_cast<float>(p.get_radius()),
-                              (desktop_mode.height / 2) - static_cast<float>(p.get_radius())});
+                              (desktop_mode.width / 2) - static_cast<float>(p.radius()),
+                              (desktop_mode.height / 2) - static_cast<float>(p.radius())});
   }
 
   if (settings.trace.size() > 0) {
@@ -133,7 +133,7 @@ void SimulationWindowThread(const Simulation::SimulationContext<V>& sim,
       // draw everything here...
       size_t idx = 0;
       for (const auto& p : sim_particles) {
-        auto pos = p.get_position();
+        auto pos = p.position();
 
         draw_particles[idx].set_position(static_cast<float>(pos.one()), -static_cast<float>(pos.two()));
         window->draw(draw_particles[idx]);

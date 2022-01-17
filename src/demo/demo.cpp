@@ -97,7 +97,7 @@ template <typename V>
 static bool validate_free(const std::vector<Component::Particle<V>>& particles,
                           typename V::vector_t radius, V pos) {
   for (const auto& p : particles) {
-    if ((p.get_position() - pos).magnitude < radius * Simulation::DefaultSettings<typename V::vector_t>.overlap_detection) {
+    if ((p.position() - pos).magnitude() < radius * Simulation::DefaultSettings<typename V::vector_t>.overlap_detection) {
       return false;
     }
   }
@@ -116,18 +116,18 @@ void correct_overlap(std::vector<Component::Particle<V>>& particles, std::mt1993
       for (size_t j = i + 1; j < particles.size(); j++) {
         auto& a = particles[i];
         auto& b = particles[j];
-        auto dist = a.get_position() - b.get_position();
-        auto min_dist = a.get_radius() + b.get_radius();
+        auto dist = a.position() - b.position();
+        auto min_dist = a.radius() + b.radius();
 
         // move over!
-        if (dist.magnitude < min_dist) {
+        if (dist.magnitude() < min_dist) {
           overlap_detected = true;
           if (!user_warned) {
             std::cout << "Modifying your particle positioning to fit particles on this screen..." << std::endl;
             user_warned = true;
           }
           // smaller one gets moved, less likely to cause compounding issues
-          auto& mover = (a.get_radius() < b.get_radius()) ? a : b;
+          auto& mover = (a.radius() < b.radius()) ? a : b;
           const auto& stayer = (mover == a) ? b : a;
 
           // this is truly horrible but we only do it once at init...
@@ -141,10 +141,10 @@ void correct_overlap(std::vector<Component::Particle<V>>& particles, std::mt1993
                      0};
 
             // proposed new position
-            auto new_pos = stayer.get_position() + 1.1 * offset.collinear_vector(a.get_radius() + b.get_radius());
-            if (validate_free(particles, mover.get_radius(), new_pos)) {
+            auto new_pos = stayer.position() + 1.1 * offset.collinear_vector(a.radius() + b.radius());
+            if (validate_free(particles, mover.radius(), new_pos)) {
               found_free_space = true;
-              mover = Component::Particle<V>(mover.get_radius(), mover.get_mass(), mover.get_velocity(), new_pos);
+              mover = Component::Particle<V>(mover.radius(), mover.mass(), mover.velocity(), new_pos);
             }
           } while(!found_free_space);
         }

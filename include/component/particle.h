@@ -15,6 +15,13 @@ namespace Component {
 using std::sqrt;
 using std::pow;
 
+// If e.g. we bounce, no need to invalidate the
+// kinetic energy since it's entirely retained within the particle
+enum class EnergyInvalidationPolicy {
+  INVALIDATE,
+  KEEP
+};
+
 // Sphere particle
 // Templated on underlying representation.
 template<typename V>
@@ -23,13 +30,16 @@ class Particle {
 typedef typename V::vector_t vector_t;
 
 public:
+
   // Create with a params
   Particle(vector_t radius, vector_t mass)
            : Particle() {
              m_radius = radius;
              m_mass = mass;
-             m_inverse_mass = pow(mass, static_cast<vector_t>(-1));
-             m_kinetic_energy = calculate_kinetic_energy();
+             m_inverse_mass = 0;
+             is_inverse_mass_valid = false;
+             m_kinetic_energy = 0;
+             is_kinetic_energy_valid = false;
            }
 
   // Default
@@ -38,8 +48,10 @@ public:
            , m_position(0, 0, 0)
            , m_radius(Simulation::DefaultSettings<vector_t>.radius_min)
            , m_mass(Simulation::DefaultSettings<vector_t>.mass_min)
-           , m_inverse_mass(pow(Simulation::DefaultSettings<vector_t>.mass_min, static_cast<vector_t>(-1)))
-           , m_kinetic_energy(calculate_kinetic_energy())
+           , m_inverse_mass(0)
+           , is_inverse_mass_valid(false)
+           , m_kinetic_energy(0)
+           , is_kinetic_energy_valid(false)
            {}
 
   // Oh look at you, providing all the parameters
@@ -49,8 +61,10 @@ public:
            : Particle(xv, yv, zv, xp, yp, zp) {
              m_radius = radius;
              m_mass = mass;
-             m_inverse_mass = pow(mass, static_cast<vector_t>(-1));
-             m_kinetic_energy = calculate_kinetic_energy();
+             m_inverse_mass = 0;
+             is_inverse_mass_valid = false;
+             m_kinetic_energy = 0;
+             is_kinetic_energy_valid = false;
            }
 
   Particle(vector_t xv, vector_t yv, vector_t zv,
@@ -59,8 +73,10 @@ public:
            , m_position(xp, yp, zp)
            , m_radius(Simulation::DefaultSettings<vector_t>.radius_min)
            , m_mass(Simulation::DefaultSettings<vector_t>.mass_min)
-           , m_inverse_mass(pow(Simulation::DefaultSettings<vector_t>.mass_min, static_cast<vector_t>(-1)))
-           , m_kinetic_energy(calculate_kinetic_energy())
+           , m_inverse_mass(0)
+           , is_inverse_mass_valid(false)
+           , m_kinetic_energy(0)
+           , is_kinetic_energy_valid(false)
            {}
 
   // Create a particle with vectors
@@ -68,8 +84,10 @@ public:
            : Particle(v, p) {
              m_radius = radius;
              m_mass = mass;
-             m_inverse_mass = pow(mass, static_cast<vector_t>(-1.f));
-             m_kinetic_energy = calculate_kinetic_energy();
+             m_inverse_mass = 0;
+             is_inverse_mass_valid = false;
+             m_kinetic_energy = 0;
+             is_kinetic_energy_valid = false;
            }
 
   Particle(const V v, const V &p)
@@ -77,8 +95,10 @@ public:
            , m_position(p)
            , m_radius(Simulation::DefaultSettings<vector_t>.radius_min)
            , m_mass(Simulation::DefaultSettings<vector_t>.mass_min)
-           , m_inverse_mass(pow(Simulation::DefaultSettings<vector_t>.mass_min, static_cast<vector_t>(-1.f)))
-           , m_kinetic_energy(calculate_kinetic_energy())
+           , m_inverse_mass(0)
+           , is_inverse_mass_valid(false)
+           , m_kinetic_energy(0)
+           , is_kinetic_energy_valid(false)
            {}
 
   Particle(const Particle<V>& other) {
@@ -87,27 +107,29 @@ public:
     this->m_radius = other.m_radius;
     this->m_mass = other.m_mass;
     this->m_inverse_mass = other.m_inverse_mass;
+    this->is_inverse_mass_valid = other.is_inverse_mass_valid;
     this->m_kinetic_energy = other.m_kinetic_energy;
+    this->is_kinetic_energy_valid = other.is_kinetic_energy_valid;
     this->uid = other.uid;
   }
 
   // get a copy of this particle's position vector
-  const V& get_position() const { return m_position; };
+  const V& position() const { return m_position; };
 
   // get a copy of this particle's velocity vector
-  const V& get_velocity() const { return m_velocity; };
+  const V& velocity() const { return m_velocity; };
 
-  vector_t get_radius() const { return m_radius; };
+  const vector_t& radius() const { return m_radius; };
 
-  vector_t get_mass() const { return m_mass; }
+  const vector_t& mass() const { return m_mass; }
 
-  vector_t get_inverse_mass() const { return m_inverse_mass; }
+  const vector_t& inverse_mass();
 
-  vector_t get_kinetic_energy() const { return m_kinetic_energy; }
+  const vector_t& kinetic_energy();
 
-  void set_velocity(const V& v);
+  void set_velocity(const V&, EnergyInvalidationPolicy = EnergyInvalidationPolicy::INVALIDATE);
 
-  void set_position(const V& p);
+  void set_position(const V&);
 
   // UID for this particle
   // 0 is an invalid UID
@@ -127,12 +149,12 @@ private:
   vector_t m_mass;
   // inverse mass, precalculate this for later use
   vector_t m_inverse_mass;
+  // is it valid?
+  bool is_inverse_mass_valid;
   // kinetic energy
   vector_t m_kinetic_energy;
-
-  vector_t calculate_kinetic_energy() {
-    return static_cast<vector_t>(0.5) * m_mass * pow(m_velocity.magnitude, static_cast<vector_t>(2));
-  }
+  // is it valid?
+  bool is_kinetic_energy_valid;
 };
 
 // Particle == Particle

@@ -16,7 +16,8 @@ using std::abs;
 // T is the underlying type
 // U is an optional type which can be coverted to T
 template<typename T>
-struct Vector {
+class Vector {
+public:
 
   // Underlying type for the vector
   typedef T vector_t;
@@ -27,17 +28,16 @@ struct Vector {
         : m_x(x)
         , m_y(y)
         , m_z(z)
-        {
-          magnitude = sqrt(pow(m_x, static_cast<T>(2)) +
-                           pow(m_y, static_cast<T>(2)) +
-                           pow(m_z, static_cast<T>(2)));
-        }
+        , is_mag_valid(false)
+        , m_magnitude(0)
+        {}
 
   Vector(const Vector<T>& other) {
     this->m_x = other.m_x;
     this->m_y = other.m_y;
     this->m_z = other.m_z;
-    this->magnitude = other.magnitude;
+    this->is_mag_valid = other.is_mag_valid;
+    this->m_magnitude = other.m_magnitude;
   }
 
   // get a unit vector
@@ -49,20 +49,34 @@ struct Vector {
   Vector absolute() const;
 
   // Return a collinear vector with the given magnitude
-  Vector collinear_vector(T magnitude) const;
+  Vector collinear_vector(T) const;
 
   // Sum the components ove a vector
   T sum() const;
+
+  // Alias for below, more clear what's going on in some contexts
+  const T& x() const { return m_x; }
+  const T& y() const { return m_y; }
+  const T& z() const { return m_z; }
 
   // Convenient access notation if we aren't concerned about euclidian space
   const T& one() const {return m_x;};
   const T& two() const {return m_y;};
   const T& three() const {return m_z;};
 
+  // Here's the tricky one... we often times do not need to calculate the magnitude of a vector and waste many CPU cycles doing it.
+  // e.g. if a Particle moves thru space due to momentum but experiences no collisions nor bounces, we never access its distance
+  // from origin and if we bother to compute it, we have uselessly run a square root, and several exponentiation routines
+  // This accessor either returns an already calculated magnitude, otherwise it calculates it on-demand.
+  const T& magnitude();
+
+private:
   T m_x;
   T m_y;
   T m_z;
-  T magnitude;
+
+  bool is_mag_valid;
+  T m_magnitude;
 };
 
 // TODO provide these as member functions

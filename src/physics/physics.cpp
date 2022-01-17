@@ -16,7 +16,7 @@ Status PhysicsContext<V>::collide_internal(Component::Particle<V>& a, Component:
   // are these particles even close enough for this?
   // define a vector from the other object's COM to ours
 
-  auto min_dist = a.get_radius() + b.get_radius();
+  auto min_dist = a.radius() + b.radius();
 
   // TODO TODO TODO
   // THIS OBVIOUSLY NEEDS EXTENDED TO 3D WHEN WE START DRAWING THAT
@@ -27,22 +27,22 @@ Status PhysicsContext<V>::collide_internal(Component::Particle<V>& a, Component:
   // summing the 3 squares, and taking their root.
   // This early bail-out for example when using the FixedPoint type took the median run time of the run() loop
   // and reduced it from 14.436ms to 2.211, just over a 6.5x improvement.
-  if (abs(a.get_position().one() - b.get_position().one()) > min_dist or
-      abs(a.get_position().two() - b.get_position().two()) > min_dist) {
+  if (abs(a.position().one() - b.position().one()) > min_dist or
+      abs(a.position().two() - b.position().two()) > min_dist) {
     return Status::None;
   }
 
-  const auto dist = a.get_position() - b.get_position();
+  const auto& dist = a.position() - b.position();
 
   // nope too far away
-  if (dist.magnitude > min_dist) {
+  if (const_cast<V&>(dist).magnitude() > min_dist) {
     return Status::None;
   }
 
-  const auto va_before = a.get_velocity();
-  const auto vb_before = b.get_velocity();
-  const auto ka_before = a.get_kinetic_energy();
-  const auto kb_before = b.get_kinetic_energy();
+  const auto va_before = a.velocity();
+  const auto vb_before = b.velocity();
+  const auto ka_before = a.kinetic_energy();
+  const auto kb_before = b.kinetic_energy();
 
   // Got some work to do.
   const auto v_delta_before = (va_before - vb_before);
@@ -54,13 +54,13 @@ Status PhysicsContext<V>::collide_internal(Component::Particle<V>& a, Component:
   // I am not completely sure why, but we seem to need to use the absolute value of the dot product lest it be negative and
   // flip the direction of our impulse
   const auto dot_product_abs = abs(impulse_unit_vector ^ v_delta_before);
-  const auto impulse_vector = 2 * impulse_unit_vector * (dot_product_abs / (a.get_inverse_mass() + b.get_inverse_mass()));
+  const auto impulse_vector = 2 * impulse_unit_vector * (dot_product_abs / (a.inverse_mass() + b.inverse_mass()));
 
   DEBUG_MSG(COLLISION_DETECTED);
 
   // now that we have our impulse vector accounted for, we can calculate post-collision velocities
-  a.set_velocity(a.get_velocity() + impulse_vector / a.get_mass());
-  b.set_velocity(b.get_velocity() - impulse_vector / b.get_mass());
+  a.set_velocity(a.velocity() + impulse_vector / a.mass());
+  b.set_velocity(b.velocity() - impulse_vector / b.mass());
 
   // KE is not always conserved in our system.
   // This is likely due to a number of factors I haven't run down yet including
@@ -69,8 +69,8 @@ Status PhysicsContext<V>::collide_internal(Component::Particle<V>& a, Component:
   //   * Inability to represent irraitonal numbers fully
   // The correction algorithm is able to correct roughly half of erroneous collisions in
   // the random case, but otherwise we simply bail and restore the original velocities.
-  const auto ka_after = a.get_kinetic_energy();
-  const auto kb_after = b.get_kinetic_energy();
+  const auto ka_after = a.kinetic_energy();
+  const auto kb_after = b.kinetic_energy();
   const auto k_delta = abs((ka_before + kb_before) - (ka_after + kb_after));
 
   // energy must be conserved
@@ -180,10 +180,12 @@ Status PhysicsContext<V>::correct_collision(Component::Particle<V>& a, Component
 
 template<typename V>
 Status PhysicsContext<V>::bounce(Component::Particle<V>& p, const Component::Wall<V>& wall) {
+  //using Component::Particle<V>::EnergyInvalidationPolicy;
+  using Component::EnergyInvalidationPolicy;
 
   // are we traveling toward this wall?
   // velocity sign in relevant direction must oppose normal vector of wall
-  auto v_relative = p.get_velocity() * wall.normal().absolute();
+  auto v_relative = p.velocity() * wall.normal().absolute();
 
   // since this is now a 1D vector, its sum is just the relevant portion... check if signs are opposite
   if ((v_relative.sum() < 0) == (wall.normal().sum() < 0)) {
@@ -191,10 +193,11 @@ Status PhysicsContext<V>::bounce(Component::Particle<V>& p, const Component::Wal
   }
 
   // Ok we're traveling at the wall, but are we close enough for a collision?
-  auto distance = abs((p.get_position() * wall.normal().absolute()).sum() - wall.position());
+  auto distance = abs((p.position() * wall.normal().absolute()).sum() - wall.position());
 
-  if (distance <= static_cast<vector_t>(p.get_radius())) {
-    p.set_velocity(p.get_velocity() * wall.inverse());
+  if (distance <= static_cast<vector_t>(p.radius())) {
+    // energy is retained solely to this particle in a bounce, no need to recalculate
+    p.set_velocity(p.velocity() * wall.inverse(), EnergyInvalidationPolicy::KEEP);
 
     DEBUG_MSG(BOUNCE_DETECTION);
 
@@ -206,7 +209,7 @@ Status PhysicsContext<V>::bounce(Component::Particle<V>& p, const Component::Wal
 template<typename V>
 void PhysicsContext<V>::gravity(Component::Particle<V>& p, US_T us) {
   vector_t time_scalar = chrono::duration_cast<chrono::duration<vector_t>>(us).count();
-  p.set_velocity(p.get_velocity() + (m_gravity.get() * time_scalar));
+  p.set_velocity(p.velocity() + (m_gravity.get() * time_scalar));
 }
 
 // TODO FFS fix this
@@ -214,14 +217,14 @@ template <>
 void PhysicsContext<Component::Vector<Util::FixedPoint>>::gravity(Component::Particle<Component::Vector<Util::FixedPoint>>& p, US_T us) {
   (void)us;
   Util::FixedPoint time_scalar(0.01);
-  p.set_velocity(p.get_velocity() + (m_gravity.get() * time_scalar));
+  p.set_velocity(p.velocity() + (m_gravity.get() * time_scalar));
 }
 
 template<typename V>
 void PhysicsContext<V>::step(Component::Particle<V>& p, US_T us) {
   // move the amount we would expect, with our given velocity
   vector_t time_scalar = chrono::duration_cast<chrono::duration<vector_t>>(us).count();
-  p.set_position(p.get_position() + (p.get_velocity() * time_scalar));
+  p.set_position(p.position() + (p.velocity() * time_scalar));
 }
 
 // TODO FFS fix this
@@ -230,7 +233,7 @@ void PhysicsContext<Component::Vector<Util::FixedPoint>>::step(Component::Partic
   (void)us;
   // move the amount we would expect, with our given velocity
   Util::FixedPoint time_scalar(0.01);
-  p.set_position(p.get_position() + (p.get_velocity() * time_scalar));
+  p.set_position(p.position() + (p.velocity() * time_scalar));
 }
 
 template class PhysicsContext<Component::Vector<float>>;
