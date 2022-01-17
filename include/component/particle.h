@@ -113,6 +113,44 @@ public:
     this->uid = other.uid;
   }
 
+  Particle(Particle<V>&& other) {
+    this->m_velocity = other.m_velocity;
+    this->m_position = other.m_position;
+    this->m_radius = other.m_radius;
+    this->m_mass = other.m_mass;
+    this->m_inverse_mass = other.m_inverse_mass;
+    this->is_inverse_mass_valid = other.is_inverse_mass_valid;
+    this->m_kinetic_energy = other.m_kinetic_energy;
+    this->is_kinetic_energy_valid = other.is_kinetic_energy_valid;
+    this->uid = other.uid;
+  }
+
+  Particle& operator=(const Particle<V>& other) {
+    this->m_velocity = other.m_velocity;
+    this->m_position = other.m_position;
+    this->m_radius = other.m_radius;
+    this->m_mass = other.m_mass;
+    this->m_inverse_mass = other.m_inverse_mass;
+    this->is_inverse_mass_valid = other.is_inverse_mass_valid;
+    this->m_kinetic_energy = other.m_kinetic_energy;
+    this->is_kinetic_energy_valid = other.is_kinetic_energy_valid;
+    this->uid = other.uid;
+    return *this;
+  }
+
+  Particle& operator=(Particle<V>&& other) {
+    this->m_velocity = other.m_velocity;
+    this->m_position = other.m_position;
+    this->m_radius = other.m_radius;
+    this->m_mass = other.m_mass;
+    this->m_inverse_mass = other.m_inverse_mass;
+    this->is_inverse_mass_valid = other.is_inverse_mass_valid;
+    this->m_kinetic_energy = other.m_kinetic_energy;
+    this->is_kinetic_energy_valid = other.is_kinetic_energy_valid;
+    this->uid = other.uid;
+    return *this;
+  }
+
   // get a copy of this particle's position vector
   const V& position() const { return m_position; };
 

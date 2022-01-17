@@ -40,6 +40,32 @@ public:
     this->m_magnitude = other.m_magnitude;
   }
 
+  Vector(Vector<T>&& other) {
+    this->m_x = other.m_x;
+    this->m_y = other.m_y;
+    this->m_z = other.m_z;
+    this->is_mag_valid = other.is_mag_valid;
+    this->m_magnitude = other.m_magnitude;
+  }
+
+  Vector& operator=(const Vector<T>& other) {
+    this->m_x = other.m_x;
+    this->m_y = other.m_y;
+    this->m_z = other.m_z;
+    this->is_mag_valid = other.is_mag_valid;
+    this->m_magnitude = other.m_magnitude;
+    return *this;
+  }
+
+  Vector& operator=(Vector<T>&& other) {
+    this->m_x = other.m_x;
+    this->m_y = other.m_y;
+    this->m_z = other.m_z;
+    this->is_mag_valid = other.is_mag_valid;
+    this->m_magnitude = other.m_magnitude;
+    return *this;
+  }
+
   // get a unit vector
   Vector unit_vector() const;
 
