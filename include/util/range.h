@@ -8,6 +8,9 @@ double guess_root(const __int128_t r) {
     size_t bottom = 0, top = ranges.size();
     size_t idx = ranges.size() / 2;
 
+    if (r > std::numeric_limits<int64_t>::max()) {
+      return (*ranges.end()).avg;
+    }
 
     // Can't reseat this as a reference, but we want read-only memory access instead
     // of making copies...
