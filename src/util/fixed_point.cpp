@@ -128,11 +128,16 @@ std::ostream& operator<<(std::ostream& os, const __int128_t i) {
   __int128_t ic = i;
 
   std::string num;
-  while (ic) {
-    //os << "dividing..." << std::endl;
-    num += std::to_string(std::abs(static_cast<int16_t>(ic % 10)));
-    //os << "got: " << static_cast<int16_t>(ic % 10) << std::endl;
-    ic /= 10;
+
+  if (i == 0) {
+    num = "0";
+  } else {
+    while (ic) {
+      //os << "dividing..." << std::endl;
+      num += std::to_string(std::abs(static_cast<int16_t>(ic % 10)));
+      //os << "got: " << static_cast<int16_t>(ic % 10) << std::endl;
+      ic /= 10;
+    }
   }
 
   std::reverse(num.begin(), num.end());
