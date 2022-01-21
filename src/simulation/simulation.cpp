@@ -198,7 +198,14 @@ void SimulationContextThread(SimulationContext<V>& sim, SimSettings<typename V::
   sim.m_particle_buffer.put();
 
   while(true) {
-    sim.run();
+    if (!g_pause) {
+      sim.run();
+    } else {
+      if (g_step) {
+        sim.run();
+        g_step = false;
+      }
+    }
   }
 }
 

@@ -10,6 +10,9 @@
 #include <tuple>
 #include <vector>
 
+extern volatile bool g_pause;
+extern volatile bool g_step;
+
 namespace Simulation {
 /**
  * The simulation class manages time and holds references to all objects within the context
