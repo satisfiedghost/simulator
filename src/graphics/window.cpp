@@ -12,6 +12,9 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wfloat-conversion"
 
+volatile bool g_pause = false;
+volatile bool g_step = false;
+
 namespace Graphics {
 
 struct DrawParticle {
@@ -130,6 +133,12 @@ void SimulationWindowThread(const Simulation::SimulationContext<V>& sim,
           g_window_running = false;
           window->close();
           return;
+      } else if (event.type == sf::Event::KeyPressed) {
+        if (event.key.code == sf::Keyboard::P) {
+          g_pause = !g_pause;
+        } else if (g_pause && event.key.code == sf::Keyboard::Period) {
+          g_step = true;
+        }
       }
     }
 
