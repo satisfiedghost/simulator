@@ -26,11 +26,14 @@ struct DrawParticle {
   }
 };
 
+bool g_window_running;
+
 template <typename V>
 void SimulationWindowThread(const Simulation::SimulationContext<V>& sim,
                             Simulation::SimSettings<typename V::vector_t> settings) {
   std::vector<DrawParticle> draw_particles;
 
+  g_window_running = true;
   bool user_color = false;
   bool user_color_range = false;
   auto color = settings.color;
@@ -115,34 +118,36 @@ void SimulationWindowThread(const Simulation::SimulationContext<V>& sim,
 
   sf::Time last_draw = clock.getElapsedTime();
   // run the program as long as the window is open
-  while (window->isOpen())
-  {
-      const auto& sim_particles = sim.get_particles();
+  while (window->isOpen()) {
+    const auto& sim_particles = sim.get_particles();
 
-      sf::Time now = clock.getElapsedTime();
-      // check all the window's events that were triggered since the last iteration of the loop
-      sf::Event event;
-      while (window->pollEvent(event)) {
-          // "close requested" event: we close the window
-          if (event.type == sf::Event::Closed)
-              window->close();
+    sf::Time now = clock.getElapsedTime();
+    // check all the window's events that were triggered since the last iteration of the loop
+    sf::Event event;
+    while (window->pollEvent(event)) {
+      // "close requested" event: we close the window
+      if (event.type == sf::Event::Closed) {
+          g_window_running = false;
+          window->close();
+          return;
       }
+    }
 
-      window->clear(sf::Color::Black);
+    window->clear(sf::Color::Black);
 
-      // draw everything here...
-      size_t idx = 0;
-      for (const auto& p : sim_particles) {
-        auto pos = p.position();
+    // draw everything here...
+    size_t idx = 0;
+    for (const auto& p : sim_particles) {
+      auto pos = p.position();
 
-        draw_particles[idx].set_position(static_cast<float>(pos.one()), -static_cast<float>(pos.two()));
-        window->draw(draw_particles[idx]);
-        idx++;
-      }
+      draw_particles[idx].set_position(static_cast<float>(pos.one()), -static_cast<float>(pos.two()));
+      window->draw(draw_particles[idx]);
+      idx++;
+    }
 
-      // end the current frame
-      window->display();
-      last_draw = now;
+    // end the current frame
+    window->display();
+    last_draw = now;
   }
 }
 
