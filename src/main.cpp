@@ -30,17 +30,17 @@ int main(int argc, char** argv) {
   sim.set_physics_context(physics_context);
 
   std::thread window_thread;
-
-  if (!settings.no_gui) {
-    window_thread = std::thread(Graphics::SimulationWindowThread<sim_t>, std::ref(sim), settings);
-  }
-
   std::thread sim_thread(Simulation::SimulationContextThread<sim_t>, std::ref(sim), settings);
 
-  if (!settings.no_gui) {
+  if (settings.no_gui) {
+    // start the sim thread only, and run until it's done
+    sim_thread.join();
+  } else {
+    // start both threads, and run until the window thread is closed
+    window_thread = std::thread(Graphics::SimulationWindowThread<sim_t>, std::ref(sim), settings);
     window_thread.join();
+    sim_thread.detach();
   }
-  sim_thread.join();
 
   std::cout << "Goodbye!" << std::endl;
   return 0;
