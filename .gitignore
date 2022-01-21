@@ -3,6 +3,7 @@ sim
 obj/*
 bin/*
 tst/*
+!tst/timer.h
 !tst/*.cc
 !tst/CMakeLists.txt
 *.txt

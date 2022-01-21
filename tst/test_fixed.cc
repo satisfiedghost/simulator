@@ -1,3 +1,4 @@
+#include "timer.h"
 #include "util/fixed_point.h"
 #include <gtest/gtest.h>
 
@@ -165,13 +166,19 @@ TEST_F(FixedTest, SquareRootLarge) {
 
   int64_t i = 0;
 
+  Timer<chrono::nanoseconds> timer;
+
   try {
     for (i = 0; i < top; i+=64) {
+      timer.start();
       square_root_test_i64(i);
+      timer.stop();
     }
   } catch (...) {
     std::cout << "Had issue with sqrt: " << i << std::endl;
   }
+
+  timer.print_all();
 }
 
 TEST_F(FixedTest, MultiplyLarge) {
